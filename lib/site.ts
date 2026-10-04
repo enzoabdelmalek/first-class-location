@@ -13,7 +13,7 @@ export const site = {
   area: "Yvelines",
 
   description:
-    "First Class, location de voitures de prestige et sportives à Mantes-la-Jolie : Audi RS3, Mercedes-AMG, BMW M. Réservation et paiement en ligne.",
+    "First Class, location de voitures de prestige à Mantes-la-Jolie : Audi RS3 Sportback gris mat, forfaits semaine et week-end. Réservation et paiement en ligne.",
 
   url: "https://www.firstclass-location.fr", // TODO domaine définitif
 
@@ -69,11 +69,11 @@ export const site = {
     siret: "882 688 427 00021",
     ape: "7711A - Location de courte durée de voitures et de véhicules automobiles légers",
     registry: "Immatriculé au Registre national des entreprises (RNE) depuis le 02/04/2026",
-    vatNumber: "TODO - à confirmer (ou mention « TVA non applicable, art. 293 B du CGI »)",
+    vatNumber: "À compléter", // TODO numéro de TVA, ou « TVA non applicable, art. 293 B du CGI »
     publicationDirector: "Guy-Séraphin Jonathan Mouanda",
-    insurer: "TODO - assureur de la flotte",
+    insurer: "À compléter", // TODO assureur de la flotte
     mediator: {
-      name: "TODO - médiateur de la consommation",
+      name: "À compléter", // TODO médiateur de la consommation
       url: "",
     },
     host: {
