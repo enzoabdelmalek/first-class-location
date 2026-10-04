@@ -111,7 +111,7 @@ export function PackageGrid({ vehicle }: { vehicle: Vehicle }) {
                   <p className="mt-2 text-sm/relaxed text-muted-on-ink">{p.rule}</p>
                   <p className="mt-8 font-display text-4xl">{euros(p.price)}</p>
                   <Link
-                    href={`/reserver?forfait=${p.id}`}
+                    href="/reserver"
                     className="mt-6 inline-flex items-center justify-between gap-2 border-t border-ink-line pt-4 text-sm font-semibold transition group-hover:text-accent-light"
                     aria-label={`Réserver le forfait ${p.label} ${p.period.toLowerCase()}`}
                   >

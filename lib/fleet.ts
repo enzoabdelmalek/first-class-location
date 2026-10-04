@@ -5,9 +5,12 @@
  * forfaits, caution de 6 000 €. Le modèle reste une liste pour accueillir
  * d'autres véhicules plus tard sans toucher aux pages.
  *
- * ⚠️ À CONFIRMER avec le client : les jours de départ de chaque forfait
- * (`startDays`), l'âge et l'ancienneté de permis minimum ; les options et
- * leurs tarifs sont des propositions de la maquette.
+ * Le client choisit librement ses dates ; le prix est déduit des forfaits
+ * par `tariff()` (voir sa règle plus bas).
+ *
+ * ⚠️ À CONFIRMER avec le client : la règle de tarification, l'âge et
+ * l'ancienneté de permis minimum ; les options et leurs tarifs sont des
+ * propositions de la maquette.
  */
 
 export type Body = "citadine" | "compacte" | "suv" | "berline" | "utilitaire";
@@ -19,8 +22,6 @@ export type Package = {
   /** Durée en jours, pour calculer le retour et les options. */
   days: number;
   price: number;
-  /** Jours de départ autorisés (0 = dimanche … 6 = samedi). */
-  startDays: readonly number[];
   rule: string;
 };
 
@@ -73,8 +74,7 @@ export const fleet: Vehicle[] = [
         period: "Semaine",
         days: 1,
         price: 350,
-        startDays: [1, 2, 3, 4],
-        rule: "Départ du lundi au jeudi, retour le lendemain à la même heure.",
+        rule: "Une journée en semaine, rendue le lendemain à la même heure.",
       },
       {
         id: "48h-semaine",
@@ -82,8 +82,7 @@ export const fleet: Vehicle[] = [
         period: "Semaine",
         days: 2,
         price: 650,
-        startDays: [1, 2, 3],
-        rule: "Départ du lundi au mercredi, retour 48 h plus tard.",
+        rule: "Deux jours en semaine.",
       },
       {
         id: "lundi-vendredi",
@@ -91,8 +90,7 @@ export const fleet: Vehicle[] = [
         period: "Semaine",
         days: 4,
         price: 1200,
-        startDays: [1],
-        rule: "Départ le lundi, retour le vendredi.",
+        rule: "Toute la semaine, du lundi au vendredi.",
       },
       {
         id: "48h-weekend",
@@ -100,8 +98,7 @@ export const fleet: Vehicle[] = [
         period: "Week-end",
         days: 2,
         price: 1000,
-        startDays: [5],
-        rule: "Départ le vendredi, retour le dimanche.",
+        rule: "Le week-end, 48 h au volant.",
       },
       {
         id: "72h-weekend",
@@ -109,8 +106,7 @@ export const fleet: Vehicle[] = [
         period: "Week-end",
         days: 3,
         price: 1200,
-        startDays: [5],
-        rule: "Départ le vendredi, retour le lundi.",
+        rule: "Le week-end prolongé, 72 h au volant.",
       },
     ],
   },
@@ -120,10 +116,6 @@ export const flagship = fleet[0];
 
 export function vehicleBySlug(slug: string | undefined) {
   return fleet.find((v) => v.slug === slug);
-}
-
-export function packageById(vehicle: Vehicle, id: string | undefined) {
-  return vehicle.packages.find((p) => p.id === id);
 }
 
 /** Prix le plus bas, pour les accroches « dès … ». */
@@ -154,26 +146,91 @@ export const extras = [
 
 export type ExtraId = (typeof extras)[number]["id"];
 
+/* --------------------------- Tarification --------------------------- */
+
+/** Au-delà, la location se fait sur devis. */
+export const MAX_ONLINE_DAYS = 7;
+
+/** Nombre de jours facturés : toute période de 24 h entamée est due. */
+export function rentalDays(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  return Math.ceil(ms / 86_400_000);
+}
+
+/** La location touche-t-elle un samedi ou un dimanche ? */
+export function includesWeekend(start: Date, end: Date) {
+  const day = new Date(start);
+  day.setHours(0, 0, 0, 0);
+  while (day < end) {
+    if (day.getDay() === 0 || day.getDay() === 6) return true;
+    day.setDate(day.getDate() + 1);
+  }
+  return false;
+}
+
+export type Tariff =
+  | { kind: "price"; days: number; period: Package["period"]; packs: Package[]; price: number }
+  | { kind: "quote"; days: number };
+
+/**
+ * Prix d'une location à partir des forfaits du véhicule.
+ *
+ * Règle (⚠️ à valider avec le client) :
+ * - une location qui touche un samedi ou un dimanche est facturée aux
+ *   forfaits week-end, sinon aux forfaits semaine ;
+ * - on retient la combinaison de forfaits LA MOINS CHÈRE couvrant la durée
+ *   (ex. 3 jours en semaine = 24 h + 48 h = 1 000 €, plutôt que 1 200 €) ;
+ * - au-delà de MAX_ONLINE_DAYS jours : sur devis.
+ */
+export function tariff(vehicle: Vehicle, start: Date, end: Date): Tariff | null {
+  const days = rentalDays(start, end);
+  if (days <= 0) return null;
+  if (days > MAX_ONLINE_DAYS) return { kind: "quote", days };
+
+  const period: Package["period"] = includesWeekend(start, end) ? "Week-end" : "Semaine";
+  const packs = vehicle.packages.filter((p) => p.period === period);
+
+  // Couverture au moindre coût : best[d] = combinaison la moins chère couvrant d jours.
+  const best: { price: number; packs: Package[] }[] = [{ price: 0, packs: [] }];
+  for (let d = 1; d <= days; d++) {
+    let choice: { price: number; packs: Package[] } | null = null;
+    for (const p of packs) {
+      const prev = best[Math.max(0, d - p.days)];
+      const price = prev.price + p.price;
+      if (!choice || price < choice.price) choice = { price, packs: [...prev.packs, p] };
+    }
+    best[d] = choice!;
+  }
+  return { kind: "price", days, period, ...best[days] };
+}
+
+/** Libellé lisible d'une combinaison : « 24 h + 48 h · semaine ». */
+export const tariffLabel = (t: Extract<Tariff, { kind: "price" }>) =>
+  `${t.packs.map((p) => p.label).join(" + ")} · ${t.period.toLowerCase()}`;
+
 export function quote({
   vehicle,
-  pack,
+  base,
+  days,
   extraIds,
   locationFee,
 }: {
   vehicle: Vehicle;
-  pack: Package;
+  base: number;
+  days: number;
   extraIds: ExtraId[];
   locationFee: number;
 }) {
   const extrasLines = extras
     .filter((e) => extraIds.includes(e.id))
-    .map((e) => ({ id: e.id, label: e.label, amount: e.perDay * pack.days }));
+    .map((e) => ({ id: e.id, label: e.label, amount: e.perDay * days }));
   const extrasTotal = extrasLines.reduce((sum, l) => sum + l.amount, 0);
   return {
-    base: pack.price,
+    base,
     extrasLines,
     locationFee,
-    total: pack.price + extrasTotal + locationFee,
+    total: base + extrasTotal + locationFee,
     deposit: vehicle.deposit,
   };
 }

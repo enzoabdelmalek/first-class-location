@@ -3,7 +3,7 @@ import { Booking, type BookingInitial } from "@/components/booking";
 
 export const metadata: Metadata = {
   title: "Réserver",
-  description: "Réservez l’Audi RS3 Sportback gris mat en ligne : forfait, date, options et paiement sécurisé.",
+  description: "Réservez l’Audi RS3 Sportback gris mat en ligne : vos dates, vos options et un paiement sécurisé.",
 };
 
 export default async function ReservePage({ searchParams }: PageProps<"/reserver">) {
@@ -23,7 +23,7 @@ export default async function ReservePage({ searchParams }: PageProps<"/reserver
           </h1>
         </div>
       </div>
-      <Booking initial={{ forfait: pick("forfait"), vehicule: pick("vehicule"), lieu: pick("lieu") }} />
+      <Booking initial={{ vehicule: pick("vehicule"), lieu: pick("lieu") }} />
     </div>
   );
 }

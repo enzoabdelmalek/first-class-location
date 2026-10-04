@@ -12,16 +12,3 @@ export function isoDay(offset: number) {
   d.setDate(d.getDate() + offset);
   return toIso(d);
 }
-
-/** Les `count` prochaines dates (à partir de demain) dont le jour de semaine est autorisé. */
-export function nextDates(weekdays: readonly number[], count: number) {
-  const out: string[] = [];
-  const d = new Date();
-  for (let i = 1; out.length < count && i < 120; i++) {
-    d.setDate(d.getDate() + 1);
-    if (weekdays.includes(d.getDay())) out.push(toIso(d));
-  }
-  return out;
-}
-
-export const weekdayOf = (iso: string) => new Date(`${iso}T12:00`).getDay();

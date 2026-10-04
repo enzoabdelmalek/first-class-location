@@ -9,7 +9,7 @@ const steps = [
   {
     code: "01",
     title: "Choisissez",
-    text: "Votre forfait, semaine ou week-end, et votre date de départ. Le prix est fixe, connu d’avance, sans frais cachés.",
+    text: "Vos dates de début et de fin, le lieu de remise des clés. Le forfait correspondant s’applique automatiquement, sans frais cachés.",
   },
   {
     code: "02",
@@ -41,7 +41,7 @@ const faq = [
   },
   {
     q: "Quelle est la différence entre les forfaits semaine et week-end ?",
-    a: "Les forfaits semaine démarrent du lundi au jeudi ; les forfaits week-end démarrent le vendredi. Le prix est fixe pour toute la durée du forfait.",
+    a: "Vous choisissez librement vos dates. Une location qui comprend un samedi ou un dimanche relève des forfaits week-end ; sinon, des forfaits semaine. Le prix s’affiche dès que vos dates sont saisies.",
   },
   {
     q: "Le carburant est-il inclus ?",

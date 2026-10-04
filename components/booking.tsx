@@ -4,8 +4,19 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CarSilhouette } from "@/components/car-silhouette";
 import { ArrowIcon, CheckIcon, LockIcon } from "@/components/icons";
-import { isoDay, nextDates, timeSlots, weekdayOf } from "@/lib/dates";
-import { extras, flagship, packageById, quote, vehicleBySlug, type ExtraId, type Package, type Vehicle } from "@/lib/fleet";
+import { isoDay, timeSlots } from "@/lib/dates";
+import {
+  extras,
+  flagship,
+  MAX_ONLINE_DAYS,
+  quote,
+  tariff,
+  tariffLabel,
+  vehicleBySlug,
+  type ExtraId,
+  type Tariff,
+  type Vehicle,
+} from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { useMounted } from "@/lib/use-mounted";
 import { cn, euros } from "@/lib/utils";
@@ -21,12 +32,11 @@ import { cn, euros } from "@/lib/utils";
  */
 
 export type BookingInitial = {
-  forfait?: string;
   vehicule?: string;
   lieu?: string;
 };
 
-const STEPS = ["Forfait", "Date", "Options", "Conducteur", "Paiement"] as const;
+const STEPS = ["Dates", "Options", "Conducteur", "Paiement"] as const;
 
 type Driver = {
   firstName: string;
@@ -52,8 +62,6 @@ const emptyDriver: Driver = {
   comment: "",
 };
 
-const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-
 function yearsBetween(from: string, to: Date) {
   const d = new Date(from);
   if (Number.isNaN(d.getTime())) return -1;
@@ -68,12 +76,9 @@ const shortDate = (d: Date) =>
 
 export function Booking({ initial }: { initial: BookingInitial }) {
   const vehicle: Vehicle = vehicleBySlug(initial.vehicule) ?? flagship;
-  const initialPack = packageById(vehicle, initial.forfait);
 
-  const [step, setStep] = useState(initialPack ? 1 : 0);
-  const [packId, setPackId] = useState(initialPack?.id ?? "");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("10:00");
+  const [step, setStep] = useState(0);
+  const [trip, setTrip] = useState({ from: "", fromTime: "10:00", to: "", toTime: "10:00" });
   const [location, setLocation] = useState(
     site.locations.some((l) => l.id === initial.lieu) ? initial.lieu! : site.locations[0].id,
   );
@@ -89,18 +94,15 @@ export function Booking({ initial }: { initial: BookingInitial }) {
   const mounted = useMounted();
   const today = mounted ? isoDay(0) : "";
 
-  const pack = packageById(vehicle, packId);
-  const suggestions = mounted && pack ? nextDates(pack.startDays, 6) : [];
-
-  const start = date ? new Date(`${date}T${time}`) : null;
-  let end: Date | null = null;
-  if (start && pack) {
-    end = new Date(start);
-    end.setDate(end.getDate() + pack.days);
-  }
+  const start = trip.from ? new Date(`${trip.from}T${trip.fromTime}`) : null;
+  const end = trip.to ? new Date(`${trip.to}T${trip.toTime}`) : null;
+  const rate: Tariff | null = start && end ? tariff(vehicle, start, end) : null;
+  const priced = rate?.kind === "price" ? rate : null;
 
   const place = site.locations.find((l) => l.id === location) ?? site.locations[0];
-  const price = pack ? quote({ vehicle, pack, extraIds, locationFee: place.fee }) : null;
+  const price = priced
+    ? quote({ vehicle, base: priced.price, days: priced.days, extraIds, locationFee: place.fee })
+    : null;
 
   const go = (next: number) => {
     setErrors({});
@@ -108,24 +110,18 @@ export function Booking({ initial }: { initial: BookingInitial }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  function choosePack(p: Package) {
-    setPackId(p.id);
-    // Une date choisie pour un autre forfait peut ne plus convenir.
-    if (date && !p.startDays.includes(weekdayOf(date))) setDate("");
-  }
-
   /* ------------------------------ Validation ------------------------------ */
 
   function validate(current: number) {
     const e: Record<string, string> = {};
-    if (current === 0 && !pack) e.pack = "Choisissez un forfait.";
-    if (current === 1 && pack) {
-      if (!date) e.date = "Choisissez une date de départ.";
-      else if (date <= today) e.date = "Le départ doit être au plus tôt demain.";
-      else if (!pack.startDays.includes(weekdayOf(date)))
-        e.date = `Ce forfait démarre le ${pack.startDays.map((d) => WEEKDAYS[d]).join(", ")}.`;
+    if (current === 0) {
+      if (!trip.from) e.from = "Choisissez une date de début.";
+      else if (trip.from <= today) e.from = "Le départ doit être au plus tôt demain.";
+      if (!trip.to) e.to = "Choisissez une date de fin.";
+      else if (rate === null) e.to = "La fin doit suivre le début.";
+      else if (rate.kind === "quote") e.to = `Au-delà de ${MAX_ONLINE_DAYS} jours, contactez-nous pour un devis.`;
     }
-    if (current === 3 && start) {
+    if (current === 2 && start) {
       const required: (keyof Driver)[] = ["firstName", "lastName", "email", "phone", "birthDate", "licenseNumber", "licenseDate"];
       for (const k of required) if (!driver[k].trim()) e[k] = "Champ requis.";
       if (driver.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driver.email)) e.email = "Adresse e-mail invalide.";
@@ -134,7 +130,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       if (driver.licenseDate && yearsBetween(driver.licenseDate, start) < vehicle.minLicenseYears)
         e.licenseDate = `${vehicle.minLicenseYears} ans de permis minimum pour ce véhicule.`;
     }
-    if (current === 4) {
+    if (current === 3) {
       if (!card.name.trim()) e.cardName = "Champ requis.";
       if (card.number.replace(/\s/g, "").length < 15) e.cardNumber = "Numéro de carte incomplet.";
       if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry)) e.expiry = "Format MM/AA.";
@@ -159,13 +155,13 @@ export function Booking({ initial }: { initial: BookingInitial }) {
     }, 1400);
   }
 
-  if (status === "done" && pack && price && start && end) {
+  if (status === "done" && priced && price && start && end) {
     return (
       <Confirmation
         code={code}
         driver={driver}
         vehicle={vehicle}
-        pack={pack}
+        label={tariffLabel(priced)}
         start={start}
         end={end}
         location={place.label}
@@ -184,71 +180,70 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1fr_380px] lg:gap-12">
         <form onSubmit={onSubmit} noValidate className="min-w-0">
           {step === 0 && (
-            <Panel title="Choisissez votre forfait" text={`${vehicle.brand} ${vehicle.model} ${vehicle.finish.toLowerCase()}. Prix fixe pour toute la durée du forfait.`}>
-              {errors.pack ? <p className="mb-4 text-sm font-medium text-accent">{errors.pack}</p> : null}
-              {(["Semaine", "Week-end"] as const).map((period) => (
-                <fieldset key={period} className="mb-8 last:mb-0">
-                  <legend className="eyebrow mb-3 flex items-center gap-3 text-accent">
-                    <span className="h-px w-8 bg-accent" aria-hidden />
-                    {period}
-                  </legend>
-                  <div className="grid gap-3">
-                    {vehicle.packages
-                      .filter((p) => p.period === period)
-                      .map((p) => (
-                        <Choice key={p.id} name="forfait" checked={packId === p.id} onChange={() => choosePack(p)}>
-                          <span className="flex items-center justify-between gap-6">
-                            <span className="block">
-                              <span className="block font-display text-lg">{p.label}</span>
-                              <span className="mt-1 block text-sm text-muted">{p.rule}</span>
-                            </span>
-                            <span className="font-display text-2xl whitespace-nowrap">{euros(p.price)}</span>
-                          </span>
-                        </Choice>
-                      ))}
-                  </div>
-                </fieldset>
-              ))}
-            </Panel>
-          )}
-
-          {step === 1 && pack && (
-            <Panel title="Quand et où ?" text={pack.rule}>
-              <fieldset>
-                <legend className="mb-3 text-sm font-semibold">Prochains départs</legend>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {suggestions.map((d) => {
-                    const on = date === d;
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => setDate(d)}
-                        aria-pressed={on}
-                        className={cn(
-                          "rounded-sm border px-4 py-3 text-left text-sm font-medium capitalize transition",
-                          on ? "border-ink bg-ink text-white" : "border-line-strong hover:border-ink",
-                        )}
-                      >
-                        {shortDate(new Date(`${d}T12:00`))}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_160px]">
-                <Field label="Ou une autre date" error={errors.date}>
-                  <input type="date" className="field" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
+            <Panel
+              title="Vos dates"
+              text={`${vehicle.brand} ${vehicle.model} ${vehicle.finish.toLowerCase()}. Choisissez librement le début et la fin : le forfait correspondant s’applique automatiquement.`}
+            >
+              <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+                <Field label="Début de la location" error={errors.from}>
+                  <input
+                    type="date"
+                    className="field"
+                    min={mounted ? isoDay(1) : undefined}
+                    value={trip.from}
+                    onChange={(e) =>
+                      setTrip((t) => ({ ...t, from: e.target.value, to: t.to && t.to < e.target.value ? e.target.value : t.to }))
+                    }
+                  />
                 </Field>
-                <Field label="Heure de remise">
-                  <select className="field" value={time} onChange={(e) => setTime(e.target.value)}>
+                <Field label="Heure">
+                  <select className="field" value={trip.fromTime} onChange={(e) => setTrip((t) => ({ ...t, fromTime: e.target.value }))}>
+                    {timeSlots.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Fin de la location" error={errors.to}>
+                  <input
+                    type="date"
+                    className="field"
+                    min={trip.from || (mounted ? isoDay(1) : undefined)}
+                    value={trip.to}
+                    onChange={(e) => setTrip((t) => ({ ...t, to: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Heure">
+                  <select className="field" value={trip.toTime} onChange={(e) => setTrip((t) => ({ ...t, toTime: e.target.value }))}>
                     {timeSlots.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </Field>
               </div>
+
+              {rate ? (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-l-2 border-accent bg-paper-alt px-5 py-4">
+                  {rate.kind === "price" ? (
+                    <>
+                      <p className="text-sm">
+                        <span className="text-muted">
+                          {rate.days} jour{rate.days > 1 ? "s" : ""} · forfait{" "}
+                        </span>
+                        <strong className="font-semibold">{tariffLabel(rate)}</strong>
+                      </p>
+                      <p className="font-display text-2xl">{euros(rate.price)}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm">
+                      Au-delà de {MAX_ONLINE_DAYS} jours, nous établissons un tarif sur mesure :{" "}
+                      <a href={`tel:${site.contact.phone}`} className="font-semibold underline underline-offset-4">
+                        {site.contact.phoneDisplay}
+                      </a>
+                      .
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               <fieldset className="mt-10">
                 <legend className="mb-3 text-sm font-semibold">Remise des clés</legend>
@@ -264,8 +259,8 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             </Panel>
           )}
 
-          {step === 2 && pack && (
-            <Panel title="Options" text={`Tarifs par jour, soit ${pack.days} jour${pack.days > 1 ? "s" : ""} pour ce forfait.`}>
+          {step === 1 && priced && (
+            <Panel title="Options" text={`Tarifs par jour, soit ${priced.days} jour${priced.days > 1 ? "s" : ""} de location.`}>
               <div className="grid gap-3">
                 {extras.map((x) => {
                   const on = extraIds.includes(x.id);
@@ -296,7 +291,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                         <span className="flex items-baseline justify-between gap-3">
                           <span className="font-semibold">{x.label}</span>
                           <span className="text-sm whitespace-nowrap text-muted">
-                            + {euros(x.perDay * pack.days)}
+                            + {euros(x.perDay * priced.days)}
                           </span>
                         </span>
                         <span className="mt-1 block text-sm/relaxed text-muted">{x.description}</span>
@@ -308,7 +303,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             </Panel>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <Panel
               title="Conducteur principal"
               text={`${vehicle.minAge} ans minimum et ${vehicle.minLicenseYears} ans de permis. Les documents originaux seront vérifiés à la remise des clés.`}
@@ -349,7 +344,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             </Panel>
           )}
 
-          {step === 4 && price && (
+          {step === 3 && price && (
             <Panel title="Paiement" text="Réglez votre forfait en toute sécurité. Votre carte n’est débitée que du montant de la location.">
               <div className="rounded-sm border border-line-strong bg-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between">
@@ -474,7 +469,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
         </form>
 
         <aside className="lg:sticky lg:top-[96px]">
-          <Summary vehicle={vehicle} pack={pack} start={start} end={end} location={place.label} price={price} />
+          <Summary vehicle={vehicle} label={priced ? tariffLabel(priced) : undefined} start={start} end={end} location={place.label} price={price} />
         </aside>
       </div>
     </div>
@@ -567,14 +562,14 @@ function Check({ checked, onChange, error, children }: { checked: boolean; onCha
 /** Récapitulatif, sur fond noir : il reste visible pendant tout le tunnel. */
 function Summary({
   vehicle,
-  pack,
+  label,
   start,
   end,
   location,
   price,
 }: {
   vehicle: Vehicle;
-  pack?: Package;
+  label?: string;
   start: Date | null;
   end: Date | null;
   location: string;
@@ -621,10 +616,10 @@ function Summary({
       </dl>
 
       <div className="mx-6 mt-5 border-t border-ink-line pt-5 pb-6">
-        {pack && price ? (
+        {label && price ? (
           <>
             <dl className="space-y-2 text-sm">
-              <Line label={`Forfait ${pack.label} · ${pack.period.toLowerCase()}`} value={euros(price.base)} />
+              <Line label={`Forfait ${label}`} value={euros(price.base)} />
               {price.extrasLines.map((l) => (
                 <Line key={l.id} label={l.label} value={euros(l.amount)} />
               ))}
@@ -640,7 +635,7 @@ function Summary({
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted-on-ink">Le prix s’affiche dès que le forfait est choisi.</p>
+          <p className="text-sm text-muted-on-ink">Le prix s’affiche dès que vos dates sont choisies.</p>
         )}
       </div>
     </div>
@@ -660,7 +655,7 @@ function Confirmation({
   code,
   driver,
   vehicle,
-  pack,
+  label,
   start,
   end,
   location,
@@ -670,7 +665,7 @@ function Confirmation({
   code: string;
   driver: Driver;
   vehicle: Vehicle;
-  pack: Package;
+  label: string;
   start: Date;
   end: Date;
   location: string;
@@ -703,7 +698,7 @@ function Confirmation({
             ["Départ", full(start)],
             ["Retour", full(end)],
             ["Remise des clés", location],
-            ["Forfait", `${pack.label} · ${pack.period.toLowerCase()}`],
+            ["Forfait", label],
           ].map(([label, value]) => (
             <div key={label}>
               <p className="eyebrow text-muted-on-ink">{label}</p>
