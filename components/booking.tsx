@@ -8,6 +8,7 @@ import { isoDay, timeSlots } from "@/lib/dates";
 import {
   extras,
   flagship,
+  GRACE_MINUTES,
   MAX_ONLINE_DAYS,
   quote,
   tariff,
@@ -244,6 +245,9 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                   )}
                 </div>
               ) : null}
+              <p className="mt-3 text-xs text-muted">
+                Une tolérance de {GRACE_MINUTES} minutes s’applique au retour : au-delà, une journée supplémentaire est due.
+              </p>
 
               <fieldset className="mt-10">
                 <legend className="mb-3 text-sm font-semibold">Remise des clés</legend>

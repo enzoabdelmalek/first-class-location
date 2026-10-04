@@ -151,11 +151,18 @@ export type ExtraId = (typeof extras)[number]["id"];
 /** Au-delà, la location se fait sur devis. */
 export const MAX_ONLINE_DAYS = 7;
 
-/** Nombre de jours facturés : toute période de 24 h entamée est due. */
+/**
+ * Tolérance au-delà de chaque tranche de 24 h, en minutes. Mêmes règles que
+ * les CGL : un retour jusqu'à une heure après l'échéance ne déclenche pas
+ * de journée supplémentaire.
+ */
+export const GRACE_MINUTES = 60;
+
+/** Nombre de jours facturés : toute période de 24 h entamée au-delà de la tolérance est due. */
 export function rentalDays(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
   if (!Number.isFinite(ms) || ms <= 0) return 0;
-  return Math.ceil(ms / 86_400_000);
+  return Math.max(1, Math.ceil((ms - GRACE_MINUTES * 60_000) / 86_400_000));
 }
 
 /** La location touche-t-elle un samedi ou un dimanche ? */
