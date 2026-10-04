@@ -507,9 +507,9 @@ function Stepper({ step, onJump }: { step: number; onJump: (i: number) => void }
             >
               {i < step ? <CheckIcon className="h-3.5 w-3.5" /> : i + 1}
             </span>
-            <span className={cn("font-medium", i === step && "font-semibold")}>{label}</span>
+            <span className={cn("font-medium", i === step ? "font-semibold" : "sr-only sm:not-sr-only")}>{label}</span>
           </button>
-          {i < STEPS.length - 1 ? <span aria-hidden className="h-px w-6 bg-line-strong" /> : null}
+          {i < STEPS.length - 1 ? <span aria-hidden className="h-px w-4 bg-line-strong sm:w-6" /> : null}
         </li>
       ))}
     </ol>
