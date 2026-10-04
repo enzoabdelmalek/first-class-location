@@ -50,7 +50,7 @@ export default function CookiesPage() {
           Accepter ou refuser est aussi simple dans un sens que dans l’autre, et le refus n’a aucune conséquence sur
           votre réservation. Votre choix est conservé 6 mois, après quoi nous vous le redemandons.
         </p>
-        <CookieSettingsButton className="rounded-full bg-ink px-6 py-3.5 font-semibold text-paper transition hover:bg-champagne hover:text-ink">
+        <CookieSettingsButton className="rounded-sm bg-ink px-6 py-3.5 font-semibold text-paper transition hover:bg-accent hover:text-white">
           Modifier mes préférences
         </CookieSettingsButton>
       </LegalSection>

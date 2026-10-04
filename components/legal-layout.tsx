@@ -36,8 +36,8 @@ export function LegalLayout({
 export function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-display text-3xl text-ink">{title}</h2>
-      <div className="mt-5 space-y-4 text-base/relaxed text-muted [&_a]:text-champagne-ink [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_strong]:font-semibold [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
+      <h2 className="font-display text-xl text-ink sm:text-2xl">{title}</h2>
+      <div className="mt-5 space-y-4 text-base/relaxed text-muted [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_strong]:font-semibold [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
         {children}
       </div>
     </section>

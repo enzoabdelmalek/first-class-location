@@ -18,24 +18,24 @@ export function SiteFooter() {
         <div className="space-y-5">
           <Logo />
           <p className="max-w-xs text-sm/relaxed text-muted-on-ink">
-            Location de voitures courte et longue durée à {site.city} et dans les {site.area}.
+            Location de voitures de prestige et sportives à {site.city} et dans les {site.area}.
           </p>
         </div>
 
         <div>
-          <p className="eyebrow text-champagne">Agence</p>
+          <p className="eyebrow text-accent-light">Agence</p>
           <address className="mt-4 space-y-1 text-sm/relaxed not-italic text-muted-on-ink">
             <p>{site.address.street}</p>
             <p>
               {site.address.postalCode} {site.address.city}
             </p>
             <p className="pt-3">
-              <a href={`tel:${site.contact.phone}`} className="text-paper hover:text-champagne">
+              <a href={`tel:${site.contact.phone}`} className="text-paper hover:text-accent-light">
                 {site.contact.phoneDisplay}
               </a>
             </p>
             <p>
-              <a href={`mailto:${site.contact.email}`} className="text-paper hover:text-champagne">
+              <a href={`mailto:${site.contact.email}`} className="text-paper hover:text-accent-light">
                 {site.contact.email}
               </a>
             </p>
@@ -43,7 +43,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <p className="eyebrow text-champagne">Horaires</p>
+          <p className="eyebrow text-accent-light">Horaires</p>
           <dl className="mt-4 space-y-2 text-sm text-muted-on-ink">
             {site.hours.map((h) => (
               <div key={h.days} className="flex justify-between gap-4 border-b border-ink-line pb-2">
@@ -55,7 +55,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <p className="eyebrow text-champagne">Informations</p>
+          <p className="eyebrow text-accent-light">Informations</p>
           <ul className="mt-4 space-y-2 text-sm">
             {legalLinks.map((l) => (
               <li key={l.href}>

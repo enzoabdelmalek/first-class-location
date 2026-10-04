@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { CarSilhouette } from "@/components/car-silhouette";
 import { ArrowIcon, CheckIcon, LockIcon } from "@/components/icons";
-import { isoDay, timeSlots } from "@/components/quick-search";
-import { VehicleSpecs } from "@/components/vehicle-card";
-import { extras, fleet, quote, rentalDays, vehicleBySlug, type ExtraId, type Vehicle } from "@/lib/fleet";
+import { isoDay, nextDates, timeSlots, weekdayOf } from "@/lib/dates";
+import { extras, flagship, packageById, quote, vehicleBySlug, type ExtraId, type Package, type Vehicle } from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { useMounted } from "@/lib/use-mounted";
 import { cn, euros } from "@/lib/utils";
@@ -18,18 +17,16 @@ import { cn, euros } from "@/lib/utils";
  * paiement passera par Stripe (Payment Element + PaymentIntent) et la
  * caution par une autorisation sans capture (`capture_method: "manual"`) ou
  * par le prestataire externe défini dans `site.booking.depositMode`.
+ * Les disponibilités du véhicule devront aussi être vérifiées côté serveur.
  */
 
 export type BookingInitial = {
-  lieu?: string;
-  depart?: string;
-  hd?: string;
-  retour?: string;
-  hr?: string;
+  forfait?: string;
   vehicule?: string;
+  lieu?: string;
 };
 
-const STEPS = ["Trajet", "Véhicule", "Options", "Conducteur", "Paiement"] as const;
+const STEPS = ["Forfait", "Date", "Options", "Conducteur", "Paiement"] as const;
 
 type Driver = {
   firstName: string;
@@ -55,6 +52,8 @@ const emptyDriver: Driver = {
   comment: "",
 };
 
+const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
 function yearsBetween(from: string, to: Date) {
   const d = new Date(from);
   if (Number.isNaN(d.getTime())) return -1;
@@ -64,22 +63,20 @@ function yearsBetween(from: string, to: Date) {
   return years;
 }
 
-const formatDate = (d: Date) =>
+const shortDate = (d: Date) =>
   d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }).replace(".", "");
 
 export function Booking({ initial }: { initial: BookingInitial }) {
-  const initialVehicle = vehicleBySlug(initial.vehicule);
-  const hasDates = Boolean(initial.depart && initial.retour);
+  const vehicle: Vehicle = vehicleBySlug(initial.vehicule) ?? flagship;
+  const initialPack = packageById(vehicle, initial.forfait);
 
-  const [step, setStep] = useState(hasDates ? (initialVehicle ? 2 : 1) : 0);
-  const [trip, setTrip] = useState({
-    location: site.locations.some((l) => l.id === initial.lieu) ? initial.lieu! : "agence",
-    from: initial.depart ?? "",
-    fromTime: initial.hd && timeSlots.includes(initial.hd) ? initial.hd : "10:00",
-    to: initial.retour ?? "",
-    toTime: initial.hr && timeSlots.includes(initial.hr) ? initial.hr : "10:00",
-  });
-  const [vehicleSlug, setVehicleSlug] = useState(initialVehicle?.slug ?? "");
+  const [step, setStep] = useState(initialPack ? 1 : 0);
+  const [packId, setPackId] = useState(initialPack?.id ?? "");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("10:00");
+  const [location, setLocation] = useState(
+    site.locations.some((l) => l.id === initial.lieu) ? initial.lieu! : site.locations[0].id,
+  );
   const [extraIds, setExtraIds] = useState<ExtraId[]>([]);
   const [driver, setDriver] = useState<Driver>(emptyDriver);
   const [card, setCard] = useState<Card>({ name: "", number: "", expiry: "", cvc: "" });
@@ -87,19 +84,23 @@ export function Booking({ initial }: { initial: BookingInitial }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "paying" | "done">("idle");
   const [code, setCode] = useState("");
-  // Dates par défaut calculées côté navigateur seulement : le serveur ne
-  // connaît pas le fuseau du visiteur.
+
+  // Tout ce qui dépend de la date du jour n'est calculé que dans le navigateur.
   const mounted = useMounted();
   const today = mounted ? isoDay(0) : "";
-  const tripFrom = trip.from || (mounted ? isoDay(1) : "");
-  const tripTo = trip.to || (mounted ? isoDay(4) : "");
 
-  const start = useMemo(() => new Date(`${tripFrom}T${trip.fromTime}`), [tripFrom, trip.fromTime]);
-  const end = useMemo(() => new Date(`${tripTo}T${trip.toTime}`), [tripTo, trip.toTime]);
-  const days = rentalDays(start, end);
-  const location = site.locations.find((l) => l.id === trip.location) ?? site.locations[0];
-  const vehicle = vehicleBySlug(vehicleSlug);
-  const price = vehicle ? quote({ vehicle, days: Math.max(days, 1), extraIds, locationFee: location.fee }) : null;
+  const pack = packageById(vehicle, packId);
+  const suggestions = mounted && pack ? nextDates(pack.startDays, 6) : [];
+
+  const start = date ? new Date(`${date}T${time}`) : null;
+  let end: Date | null = null;
+  if (start && pack) {
+    end = new Date(start);
+    end.setDate(end.getDate() + pack.days);
+  }
+
+  const place = site.locations.find((l) => l.id === location) ?? site.locations[0];
+  const price = pack ? quote({ vehicle, pack, extraIds, locationFee: place.fee }) : null;
 
   const go = (next: number) => {
     setErrors({});
@@ -107,19 +108,24 @@ export function Booking({ initial }: { initial: BookingInitial }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  function choosePack(p: Package) {
+    setPackId(p.id);
+    // Une date choisie pour un autre forfait peut ne plus convenir.
+    if (date && !p.startDays.includes(weekdayOf(date))) setDate("");
+  }
+
   /* ------------------------------ Validation ------------------------------ */
 
   function validate(current: number) {
     const e: Record<string, string> = {};
-    if (current === 0) {
-      if (!tripFrom) e.from = "Choisissez une date de départ.";
-      if (!tripTo) e.to = "Choisissez une date de retour.";
-      if (tripFrom && tripFrom < today) e.from = "La date de départ est passée.";
-      if (tripFrom && tripTo && days <= 0) e.to = "Le retour doit suivre le départ.";
-      if (days > 30) e.to = "Au-delà de 30 jours, contactez-nous pour un devis longue durée.";
+    if (current === 0 && !pack) e.pack = "Choisissez un forfait.";
+    if (current === 1 && pack) {
+      if (!date) e.date = "Choisissez une date de départ.";
+      else if (date <= today) e.date = "Le départ doit être au plus tôt demain.";
+      else if (!pack.startDays.includes(weekdayOf(date)))
+        e.date = `Ce forfait démarre le ${pack.startDays.map((d) => WEEKDAYS[d]).join(", ")}.`;
     }
-    if (current === 1 && !vehicle) e.vehicle = "Sélectionnez un véhicule.";
-    if (current === 3 && vehicle) {
+    if (current === 3 && start) {
       const required: (keyof Driver)[] = ["firstName", "lastName", "email", "phone", "birthDate", "licenseNumber", "licenseDate"];
       for (const k of required) if (!driver[k].trim()) e[k] = "Champ requis.";
       if (driver.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driver.email)) e.email = "Adresse e-mail invalide.";
@@ -153,15 +159,16 @@ export function Booking({ initial }: { initial: BookingInitial }) {
     }, 1400);
   }
 
-  if (status === "done" && vehicle && price) {
+  if (status === "done" && pack && price && start && end) {
     return (
       <Confirmation
         code={code}
         driver={driver}
         vehicle={vehicle}
+        pack={pack}
         start={start}
         end={end}
-        location={location.label}
+        location={place.label}
         total={price.total}
         deposit={price.deposit}
       />
@@ -177,111 +184,96 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1fr_380px] lg:gap-12">
         <form onSubmit={onSubmit} noValidate className="min-w-0">
           {step === 0 && (
-            <Panel title="Où et quand ?" text="Indiquez vos dates et le lieu où vous souhaitez récupérer le véhicule.">
+            <Panel title="Choisissez votre forfait" text={`${vehicle.brand} ${vehicle.model} ${vehicle.finish.toLowerCase()}. Prix fixe pour toute la durée du forfait.`}>
+              {errors.pack ? <p className="mb-4 text-sm font-medium text-accent">{errors.pack}</p> : null}
+              {(["Semaine", "Week-end"] as const).map((period) => (
+                <fieldset key={period} className="mb-8 last:mb-0">
+                  <legend className="eyebrow mb-3 flex items-center gap-3 text-accent">
+                    <span className="h-px w-8 bg-accent" aria-hidden />
+                    {period}
+                  </legend>
+                  <div className="grid gap-3">
+                    {vehicle.packages
+                      .filter((p) => p.period === period)
+                      .map((p) => (
+                        <Choice key={p.id} name="forfait" checked={packId === p.id} onChange={() => choosePack(p)}>
+                          <span className="flex items-center justify-between gap-6">
+                            <span className="block">
+                              <span className="block font-display text-lg">{p.label}</span>
+                              <span className="mt-1 block text-sm text-muted">{p.rule}</span>
+                            </span>
+                            <span className="font-display text-2xl whitespace-nowrap">{euros(p.price)}</span>
+                          </span>
+                        </Choice>
+                      ))}
+                  </div>
+                </fieldset>
+              ))}
+            </Panel>
+          )}
+
+          {step === 1 && pack && (
+            <Panel title="Quand et où ?" text={pack.rule}>
               <fieldset>
-                <legend className="mb-3 text-sm font-semibold">Lieu de prise en charge</legend>
+                <legend className="mb-3 text-sm font-semibold">Prochains départs</legend>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {suggestions.map((d) => {
+                    const on = date === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDate(d)}
+                        aria-pressed={on}
+                        className={cn(
+                          "rounded-sm border px-4 py-3 text-left text-sm font-medium capitalize transition",
+                          on ? "border-ink bg-ink text-white" : "border-line-strong hover:border-ink",
+                        )}
+                      >
+                        {shortDate(new Date(`${d}T12:00`))}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_160px]">
+                <Field label="Ou une autre date" error={errors.date}>
+                  <input type="date" className="field" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
+                </Field>
+                <Field label="Heure de remise">
+                  <select className="field" value={time} onChange={(e) => setTime(e.target.value)}>
+                    {timeSlots.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <fieldset className="mt-10">
+                <legend className="mb-3 text-sm font-semibold">Remise des clés</legend>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {site.locations.map((l) => (
-                    <Choice
-                      key={l.id}
-                      name="location"
-                      checked={trip.location === l.id}
-                      onChange={() => setTrip((t) => ({ ...t, location: l.id }))}
-                    >
+                    <Choice key={l.id} name="location" checked={location === l.id} onChange={() => setLocation(l.id)}>
                       <span className="block text-sm font-semibold">{l.label}</span>
                       <span className="mt-1 block text-sm text-muted">{l.fee ? `+ ${euros(l.fee)}` : "Inclus"}</span>
                     </Choice>
                   ))}
                 </div>
               </fieldset>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-[1fr_140px]">
-                <Field label="Date de départ" error={errors.from}>
-                  <input
-                    type="date"
-                    className="field"
-                    min={today}
-                    value={tripFrom}
-                    onChange={(e) => setTrip((t) => ({ ...t, from: e.target.value, to: tripTo < e.target.value ? e.target.value : tripTo }))}
-                  />
-                </Field>
-                <Field label="Heure">
-                  <select className="field" value={trip.fromTime} onChange={(e) => setTrip((t) => ({ ...t, fromTime: e.target.value }))}>
-                    {timeSlots.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Date de retour" error={errors.to}>
-                  <input
-                    type="date"
-                    className="field"
-                    min={tripFrom || today}
-                    value={tripTo}
-                    onChange={(e) => setTrip((t) => ({ ...t, to: e.target.value }))}
-                  />
-                </Field>
-                <Field label="Heure">
-                  <select className="field" value={trip.toTime} onChange={(e) => setTrip((t) => ({ ...t, toTime: e.target.value }))}>
-                    {timeSlots.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              {days > 0 ? (
-                <p className="mt-5 text-sm text-muted">
-                  Durée facturée : <strong className="text-ink">{days} jour{days > 1 ? "s" : ""}</strong> - toute période de 24 h
-                  entamée est due.
-                </p>
-              ) : null}
             </Panel>
           )}
 
-          {step === 1 && (
-            <Panel title="Choisissez votre véhicule" text={`Prix total pour ${days} jour${days > 1 ? "s" : ""}, remise de durée comprise.`}>
-              {errors.vehicle ? <p className="mb-4 text-sm font-medium text-red-700">{errors.vehicle}</p> : null}
+          {step === 2 && pack && (
+            <Panel title="Options" text={`Tarifs par jour, soit ${pack.days} jour${pack.days > 1 ? "s" : ""} pour ce forfait.`}>
               <div className="grid gap-3">
-                {fleet.map((v) => {
-                  const q = quote({ vehicle: v, days: Math.max(days, 1), extraIds: [], locationFee: 0 });
-                  return (
-                    <Choice key={v.slug} name="vehicle" checked={vehicleSlug === v.slug} onChange={() => setVehicleSlug(v.slug)}>
-                      <span className="grid items-center gap-4 sm:grid-cols-[150px_1fr_auto]">
-                        <span className="blueprint block rounded-lg bg-paper-alt px-3 pt-4 pb-2">
-                          <CarSilhouette body={v.body} className="w-full text-ink" />
-                        </span>
-                        <span className="block">
-                          <span className="eyebrow block text-champagne-ink">{v.category}</span>
-                          <span className="mt-1 block font-display text-2xl leading-tight">
-                            {v.brand} <span className="italic">{v.model}</span>
-                          </span>
-                          <span className="mt-3 block">
-                            <VehicleSpecs vehicle={v} />
-                          </span>
-                        </span>
-                        <span className="block border-t border-line pt-3 sm:border-0 sm:pt-0 sm:text-right">
-                          <span className="block font-display text-3xl">{euros(q.base - q.discount)}</span>
-                          <span className="block text-xs text-muted">soit {euros((q.base - q.discount) / Math.max(days, 1))} / jour</span>
-                          <span className="block text-xs text-muted">caution {euros(v.deposit)}</span>
-                        </span>
-                      </span>
-                    </Choice>
-                  );
-                })}
-              </div>
-            </Panel>
-          )}
-
-          {step === 2 && vehicle && (
-            <Panel title="Options" text="Ajoutez ce qui rendra le trajet plus simple. Tarifs par jour de location.">
-              <div className="grid gap-3 sm:grid-cols-2">
                 {extras.map((x) => {
                   const on = extraIds.includes(x.id);
                   return (
                     <label
                       key={x.id}
                       className={cn(
-                        "flex cursor-pointer gap-4 rounded-xl border bg-surface p-5 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-champagne",
+                        "flex cursor-pointer gap-4 rounded-sm border bg-surface p-5 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent",
                         on ? "border-ink shadow-card" : "border-line-strong hover:border-ink",
                       )}
                     >
@@ -294,8 +286,8 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                       <span
                         aria-hidden
                         className={cn(
-                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-                          on ? "border-ink bg-ink text-paper" : "border-line-strong",
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border",
+                          on ? "border-accent bg-accent text-white" : "border-line-strong",
                         )}
                       >
                         {on ? <CheckIcon className="h-3.5 w-3.5" /> : null}
@@ -303,7 +295,9 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                       <span className="flex-1">
                         <span className="flex items-baseline justify-between gap-3">
                           <span className="font-semibold">{x.label}</span>
-                          <span className="text-sm whitespace-nowrap text-muted">+ {euros(x.perDay)} / j</span>
+                          <span className="text-sm whitespace-nowrap text-muted">
+                            + {euros(x.perDay * pack.days)}
+                          </span>
                         </span>
                         <span className="mt-1 block text-sm/relaxed text-muted">{x.description}</span>
                       </span>
@@ -311,17 +305,13 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                   );
                 })}
               </div>
-              <p className="mt-6 rounded-xl bg-paper-alt p-4 text-sm/relaxed text-muted">
-                Inclus dans tous les tarifs : assurance responsabilité civile, assistance, {site.booking.kmPerDay} km par jour
-                (puis {euros(site.booking.extraKm)} / km).
-              </p>
             </Panel>
           )}
 
-          {step === 3 && vehicle && (
+          {step === 3 && (
             <Panel
               title="Conducteur principal"
-              text={`Pour ce véhicule : ${vehicle.minAge} ans minimum et ${vehicle.minLicenseYears} ans de permis. Les documents seront vérifiés à la remise des clés.`}
+              text={`${vehicle.minAge} ans minimum et ${vehicle.minLicenseYears} ans de permis. Les documents originaux seront vérifiés à la remise des clés.`}
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Prénom" error={errors.firstName}>
@@ -359,12 +349,12 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             </Panel>
           )}
 
-          {step === 4 && vehicle && price && (
-            <Panel title="Paiement" text="Réglez votre location en toute sécurité. Votre carte n’est débitée que du montant de la location.">
-              <div className="rounded-2xl border border-line-strong bg-surface p-5 sm:p-6">
+          {step === 4 && price && (
+            <Panel title="Paiement" text="Réglez votre forfait en toute sécurité. Votre carte n’est débitée que du montant de la location.">
+              <div className="rounded-sm border border-line-strong bg-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between">
                   <p className="flex items-center gap-2 text-sm font-semibold">
-                    <LockIcon className="h-4 w-4 text-champagne-ink" /> Carte bancaire
+                    <LockIcon className="h-4 w-4 text-accent" /> Carte bancaire
                   </p>
                   <p className="font-mono text-[0.68rem] tracking-[0.18em] text-muted">VISA · MASTERCARD · CB</p>
                 </div>
@@ -413,8 +403,8 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-champagne/50 bg-champagne/10 p-5 sm:p-6">
-                <p className="eyebrow text-champagne-ink">Caution - {euros(price.deposit)}</p>
+              <div className="mt-5 border-l-2 border-accent bg-paper-alt p-5 sm:p-6">
+                <p className="eyebrow text-accent">Caution · {euros(price.deposit)}</p>
                 {site.booking.depositMode === "onsite" ? (
                   <>
                     <p className="mt-2 text-sm/relaxed text-muted">
@@ -422,11 +412,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                       carte. Le montant est bloqué, <strong className="text-ink">jamais débité</strong> si le véhicule est restitué en bon
                       état, et libéré sous {site.booking.releaseDays} jours après la restitution.
                     </p>
-                    <Check
-                      checked={accepted.deposit}
-                      onChange={(v) => setAccepted({ ...accepted, deposit: v })}
-                      error={errors.deposit}
-                    >
+                    <Check checked={accepted.deposit} onChange={(v) => setAccepted({ ...accepted, deposit: v })} error={errors.deposit}>
                       J’autorise First Class à enregistrer une empreinte de {euros(price.deposit)} sur ma carte.
                     </Check>
                   </>
@@ -450,7 +436,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 .
               </Check>
 
-              <p className="mt-6 rounded-lg border border-dashed border-line-strong px-4 py-3 text-xs text-muted">
+              <p className="mt-6 border border-dashed border-line-strong px-4 py-3 text-xs text-muted">
                 Maquette de démonstration : aucun paiement n’est effectué et aucune donnée n’est enregistrée.
               </p>
             </Panel>
@@ -458,7 +444,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
             {step > 0 ? (
-              <button type="button" onClick={() => go(step - 1)} className="rounded-full border border-line-strong px-6 py-3.5 font-semibold hover:border-ink">
+              <button type="button" onClick={() => go(step - 1)} className="rounded-sm border border-line-strong px-6 py-3.5 font-semibold hover:border-ink">
                 Retour
               </button>
             ) : (
@@ -467,7 +453,10 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             <button
               type="submit"
               disabled={status === "paying"}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-7 py-3.5 font-semibold text-paper transition hover:bg-champagne hover:text-ink disabled:opacity-60"
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 font-semibold text-white transition disabled:opacity-60",
+                step === STEPS.length - 1 ? "bg-accent hover:bg-accent-hover" : "bg-ink hover:bg-accent",
+              )}
             >
               {step < STEPS.length - 1 ? (
                 <>
@@ -485,14 +474,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
         </form>
 
         <aside className="lg:sticky lg:top-[96px]">
-          <BoardingPass
-            start={tripFrom ? start : null}
-            end={tripTo ? end : null}
-            days={days}
-            location={location.label}
-            vehicle={vehicle}
-            price={price}
-          />
+          <Summary vehicle={vehicle} pack={pack} start={start} end={end} location={place.label} price={price} />
         </aside>
       </div>
     </div>
@@ -512,21 +494,21 @@ function Stepper({ step, onJump }: { step: number; onJump: (i: number) => void }
             disabled={i >= step}
             aria-current={i === step ? "step" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-full py-1.5 pr-3 pl-1.5 transition",
-              i === step && "bg-ink text-paper",
-              i < step && "hover:bg-paper-alt",
+              "flex items-center gap-2 py-1.5 transition",
+              i === step && "text-ink",
+              i < step && "hover:text-accent",
               i > step && "text-muted",
             )}
           >
             <span
               className={cn(
-                "flex h-6 w-6 items-center justify-center rounded-full font-mono text-[0.7rem]",
-                i === step ? "bg-champagne text-ink" : i < step ? "bg-ink text-paper" : "border border-line-strong",
+                "flex h-7 w-7 items-center justify-center rounded-full font-mono text-[0.7rem]",
+                i === step ? "bg-accent text-white" : i < step ? "bg-ink text-white" : "border border-line-strong",
               )}
             >
               {i < step ? <CheckIcon className="h-3.5 w-3.5" /> : i + 1}
             </span>
-            <span className="font-medium">{label}</span>
+            <span className={cn("font-medium", i === step && "font-semibold")}>{label}</span>
           </button>
           {i < STEPS.length - 1 ? <span aria-hidden className="h-px w-6 bg-line-strong" /> : null}
         </li>
@@ -538,7 +520,7 @@ function Stepper({ step, onJump }: { step: number; onJump: (i: number) => void }
 function Panel({ title, text, children }: { title: string; text?: string; children: ReactNode }) {
   return (
     <section className="rise">
-      <h2 className="font-display text-4xl/[1.05] tracking-tight sm:text-5xl/[1.05]">{title}</h2>
+      <h2 className="font-display text-3xl/[1.08] sm:text-4xl/[1.08]">{title}</h2>
       {text ? <p className="mt-3 max-w-2xl text-base/relaxed text-muted">{text}</p> : null}
       <div className="mt-8">{children}</div>
     </section>
@@ -550,7 +532,7 @@ function Field({ label, error, className, children }: { label: string; error?: s
     <label className={cn("block", className)}>
       <span className="mb-1.5 block text-sm font-medium">{label}</span>
       {children}
-      {error ? <span className="mt-1.5 block text-sm text-red-700">{error}</span> : null}
+      {error ? <span className="mt-1.5 block text-sm text-accent">{error}</span> : null}
     </label>
   );
 }
@@ -559,11 +541,12 @@ function Choice({ name, checked, onChange, children }: { name: string; checked: 
   return (
     <label
       className={cn(
-        "relative block cursor-pointer rounded-xl border bg-surface p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-champagne sm:p-5",
+        "relative block cursor-pointer rounded-sm border bg-surface p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent sm:p-5",
         checked ? "border-ink shadow-card ring-1 ring-ink" : "border-line-strong hover:border-ink",
       )}
     >
       <input type="radio" name={name} checked={checked} onChange={onChange} className="sr-only" />
+      {checked ? <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-accent" /> : null}
       {children}
     </label>
   );
@@ -573,116 +556,102 @@ function Check({ checked, onChange, error, children }: { checked: boolean; onCha
   return (
     <div className="mt-5">
       <label className="flex cursor-pointer items-start gap-3 text-sm/relaxed">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#0e0f11]" />
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#dc0a14]" />
         <span>{children}</span>
       </label>
-      {error ? <p className="mt-1.5 pl-7 text-sm text-red-700">{error}</p> : null}
+      {error ? <p className="mt-1.5 pl-7 text-sm text-accent">{error}</p> : null}
     </div>
   );
 }
 
-/** Récapitulatif façon carte d'embarquement : la signature visuelle du tunnel. */
-function BoardingPass({
+/** Récapitulatif, sur fond noir : il reste visible pendant tout le tunnel. */
+function Summary({
+  vehicle,
+  pack,
   start,
   end,
-  days,
   location,
-  vehicle,
   price,
 }: {
+  vehicle: Vehicle;
+  pack?: Package;
   start: Date | null;
   end: Date | null;
-  days: number;
   location: string;
-  vehicle?: Vehicle;
   price: ReturnType<typeof quote> | null;
 }) {
-  const valid = start && end && days > 0 && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime());
   const time = (d: Date) => d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-line">
-      <div className="flex items-center justify-between bg-ink px-6 py-4 text-paper">
-        <span className="font-display text-xl italic">First</span>
-        <span className="font-mono text-[0.65rem] tracking-[0.22em] text-champagne">VOTRE RÉSERVATION</span>
+    <div className="overflow-hidden bg-ink text-paper shadow-card">
+      <div className="flex items-center justify-between border-b border-ink-line px-6 py-4">
+        <span className="text-xs font-semibold tracking-[0.18em] whitespace-nowrap [font-stretch:125%]">
+          FIRST <span className="text-accent-light">/</span> CLASS
+        </span>
+        <span className="eyebrow text-muted-on-ink">Récapitulatif</span>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3 px-6 pt-6">
+      <div className="px-6 pt-6">
+        <CarSilhouette body={vehicle.body} className="w-full text-[#b8bcc2]" strokeWidth={1.4} />
+        <p className="mt-4 font-display text-lg leading-snug">
+          {vehicle.brand} <span className="text-accent-light italic">{vehicle.model}</span>
+        </p>
+        <p className="text-sm text-muted-on-ink">{vehicle.finish}</p>
+      </div>
+
+      <div className="mx-6 mt-6 grid grid-cols-[1fr_auto_1fr] items-end gap-3 border-t border-ink-line pt-5">
         <div>
-          <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted">DÉPART</p>
-          <p className="mt-1 font-display text-3xl leading-none">{valid ? time(start) : "--:--"}</p>
-          <p className="mt-1 text-sm text-muted capitalize">{valid ? formatDate(start) : "-"}</p>
+          <p className="eyebrow text-muted-on-ink">Départ</p>
+          <p className="mt-2 font-display text-2xl leading-none">{start ? time(start) : "--:--"}</p>
+          <p className="mt-1 text-sm text-muted-on-ink capitalize">{start ? shortDate(start) : "-"}</p>
         </div>
-        <div className="pb-6 text-center">
-          <p className="font-mono text-[0.65rem] text-champagne-ink">
-            {valid ? `${days} J` : ""}
-          </p>
-          <ArrowIcon className="mx-auto h-5 w-5 text-champagne-ink" />
-        </div>
+        <ArrowIcon className="mb-6 h-5 w-5 text-accent-light" />
         <div className="text-right">
-          <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted">RETOUR</p>
-          <p className="mt-1 font-display text-3xl leading-none">{valid ? time(end) : "--:--"}</p>
-          <p className="mt-1 text-sm text-muted capitalize">{valid ? formatDate(end) : "-"}</p>
+          <p className="eyebrow text-muted-on-ink">Retour</p>
+          <p className="mt-2 font-display text-2xl leading-none">{end ? time(end) : "--:--"}</p>
+          <p className="mt-1 text-sm text-muted-on-ink capitalize">{end ? shortDate(end) : "-"}</p>
         </div>
       </div>
 
-      <div className="mx-6 mt-5 border-t border-line pt-4">
-        <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted">LIEU</p>
-        <p className="mt-1 text-sm font-medium">{location}</p>
-      </div>
+      <dl className="mx-6 mt-5 space-y-2 border-t border-ink-line pt-5 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-on-ink">Remise des clés</dt>
+          <dd className="text-right">{location}</dd>
+        </div>
+      </dl>
 
-      <div className="mx-6 mt-4 border-t border-line pt-4">
-        <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted">VÉHICULE</p>
-        {vehicle ? (
-          <div className="mt-2 flex items-center gap-4">
-            <CarSilhouette body={vehicle.body} className="w-24 shrink-0 text-ink" strokeWidth={2.4} />
-            <p className="font-display text-xl leading-tight">
-              {vehicle.brand} <span className="italic">{vehicle.model}</span>
-            </p>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted">À choisir</p>
-        )}
-      </div>
-
-      <div className="relative my-6">
-        <span className="absolute top-1/2 -left-3 h-6 w-6 -translate-y-1/2 rounded-full bg-paper ring-1 ring-line" aria-hidden />
-        <span className="absolute top-1/2 -right-3 h-6 w-6 -translate-y-1/2 rounded-full bg-paper ring-1 ring-line" aria-hidden />
-        <div className="perforation mx-6" aria-hidden />
-      </div>
-
-      <div className="px-6 pb-6">
-        {price && valid ? (
+      <div className="mx-6 mt-5 border-t border-ink-line pt-5 pb-6">
+        {pack && price ? (
           <>
             <dl className="space-y-2 text-sm">
-              <Line label={`Location · ${days} j`} value={euros(price.base)} />
-              {price.discount ? <Line label={price.tier?.label ?? "Remise"} value={`- ${euros(price.discount)}`} accent /> : null}
+              <Line label={`Forfait ${pack.label} · ${pack.period.toLowerCase()}`} value={euros(price.base)} />
               {price.extrasLines.map((l) => (
                 <Line key={l.id} label={l.label} value={euros(l.amount)} />
               ))}
               {price.locationFee ? <Line label="Livraison" value={euros(price.locationFee)} /> : null}
             </dl>
-            <div className="mt-4 flex items-end justify-between border-t border-line pt-4">
+            <div className="mt-4 flex items-end justify-between border-t border-ink-line pt-4">
               <p className="text-sm font-semibold">Total TTC</p>
-              <p className="font-display text-4xl leading-none">{euros(price.total)}</p>
+              <p className="font-display text-3xl leading-none">{euros(price.total)}</p>
             </div>
-            <p className="mt-3 text-xs text-muted">
-              + caution {euros(price.deposit)}, {site.booking.depositMode === "onsite" ? "par empreinte bancaire non débitée" : "déposée séparément"}
+            <p className="mt-3 text-xs text-muted-on-ink">
+              + caution {euros(price.deposit)},{" "}
+              {site.booking.depositMode === "onsite" ? "par empreinte bancaire non débitée" : "déposée séparément"}
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted">Le prix s’affiche dès que les dates et le véhicule sont choisis.</p>
+          <p className="text-sm text-muted-on-ink">Le prix s’affiche dès que le forfait est choisi.</p>
         )}
       </div>
     </div>
   );
 }
 
-function Line({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Line({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-muted">{label}</dt>
-      <dd className={cn("tabular-nums", accent && "text-champagne-ink")}>{value}</dd>
+      <dt className="text-muted-on-ink">{label}</dt>
+      <dd className="tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -691,6 +660,7 @@ function Confirmation({
   code,
   driver,
   vehicle,
+  pack,
   start,
   end,
   location,
@@ -700,6 +670,7 @@ function Confirmation({
   code: string;
   driver: Driver;
   vehicle: Vehicle;
+  pack: Package;
   start: Date;
   end: Date;
   location: string;
@@ -711,42 +682,42 @@ function Confirmation({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-8 lg:py-24">
-      <p className="eyebrow rise text-champagne-ink">Réservation confirmée</p>
-      <h2 className="rise mt-3 font-display text-5xl/[1.02] tracking-tight sm:text-6xl/[1.02]">
-        Bon voyage, <span className="italic">{driver.firstName}.</span>
+      <p className="eyebrow rise text-accent">Réservation confirmée</p>
+      <h2 className="rise mt-3 font-display text-4xl/[1.05] sm:text-5xl/[1.05]">
+        Bonne route, <span className="text-accent italic">{driver.firstName}.</span>
       </h2>
       <p className="rise mt-5 max-w-xl text-base/relaxed text-muted">
         Un e-mail de confirmation vient de partir à <strong className="text-ink">{driver.email}</strong> avec votre contrat et
         la liste des documents à présenter.
       </p>
 
-      <div className="rise mt-10 overflow-hidden rounded-2xl bg-ink text-paper shadow-2xl">
+      <div className="rise mt-10 overflow-hidden bg-ink text-paper shadow-2xl">
         <div className="flex items-center justify-between border-b border-ink-line px-6 py-4 sm:px-8">
-          <span className="font-display text-2xl italic">First Class</span>
-          <span className="font-mono text-sm tracking-[0.2em] text-champagne">{code}</span>
+          <span className="text-sm font-semibold tracking-[0.18em] [font-stretch:125%]">
+            FIRST <span className="text-accent-light">/</span> CLASS
+          </span>
+          <span className="font-mono text-sm tracking-[0.2em] text-accent-light">{code}</span>
         </div>
         <div className="grid gap-6 px-6 py-7 sm:grid-cols-2 sm:px-8">
-          <div>
-            <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted-on-ink">DÉPART</p>
-            <p className="mt-1 capitalize">{full(start)}</p>
-          </div>
-          <div>
-            <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted-on-ink">RETOUR</p>
-            <p className="mt-1 capitalize">{full(end)}</p>
-          </div>
-          <div>
-            <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted-on-ink">LIEU</p>
-            <p className="mt-1">{location}</p>
-          </div>
-          <div>
-            <p className="font-mono text-[0.65rem] tracking-[0.2em] text-muted-on-ink">VÉHICULE</p>
-            <p className="mt-1">
-              {vehicle.brand} {vehicle.model}
-            </p>
-          </div>
+          {[
+            ["Départ", full(start)],
+            ["Retour", full(end)],
+            ["Remise des clés", location],
+            ["Forfait", `${pack.label} · ${pack.period.toLowerCase()}`],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="eyebrow text-muted-on-ink">{label}</p>
+              <p className="mt-1 first-letter:uppercase">{value}</p>
+            </div>
+          ))}
         </div>
         <div className="flex flex-wrap items-end justify-between gap-4 border-t border-ink-line px-6 py-6 sm:px-8">
-          <CarSilhouette body={vehicle.body} className="w-40 text-champagne" />
+          <div className="w-44">
+            <CarSilhouette body={vehicle.body} className="w-full text-[#b8bcc2]" />
+            <p className="mt-2 text-xs text-muted-on-ink">
+              {vehicle.brand} {vehicle.model} · {vehicle.finish}
+            </p>
+          </div>
           <div className="text-right">
             <p className="text-sm text-muted-on-ink">Payé</p>
             <p className="font-display text-4xl">{euros(total)}</p>
@@ -756,10 +727,10 @@ function Confirmation({
       </div>
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <Link href="/" className="rounded-full bg-ink px-6 py-3.5 font-semibold text-paper hover:bg-champagne hover:text-ink">
+        <Link href="/" className="rounded-sm bg-ink px-6 py-3.5 font-semibold text-white hover:bg-accent">
           Retour à l’accueil
         </Link>
-        <a href={`tel:${site.contact.phone}`} className="rounded-full border border-line-strong px-6 py-3.5 font-semibold hover:border-ink">
+        <a href={`tel:${site.contact.phone}`} className="rounded-sm border border-line-strong px-6 py-3.5 font-semibold hover:border-ink">
           Une question ? {site.contact.phoneDisplay}
         </a>
       </div>

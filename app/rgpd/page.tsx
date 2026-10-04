@@ -29,7 +29,7 @@ export default function RgpdPage() {
       intro="Le Règlement général sur la protection des données vous donne la maîtrise de vos informations. Voici comment l’exercer."
     >
       <LegalSection title="Ce que vous pouvez demander">
-        <dl className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
+        <dl className="grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
           {rights.map(([title, text]) => (
             <div key={title} className="bg-surface p-5">
               <dt className="font-semibold text-ink">{title}</dt>

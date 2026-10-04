@@ -8,12 +8,12 @@
 
 export const site = {
   name: "First Class",
-  tagline: "Location de véhicules",
+  tagline: "Location de prestige",
   city: "Mantes-la-Jolie",
   area: "Yvelines",
 
   description:
-    "First Class, location de voitures courte et longue durée à Mantes-la-Jolie. Citadines, SUV, berlines et utilitaires, réservation et paiement en ligne.",
+    "First Class, location de voitures de prestige et sportives à Mantes-la-Jolie : Audi RS3, Mercedes-AMG, BMW M. Réservation et paiement en ligne.",
 
   url: "https://www.firstclass-location.fr", // TODO domaine définitif
 
@@ -56,8 +56,8 @@ export const site = {
      */
     depositMode: "onsite" as "onsite" | "external",
     depositPartner: "Swikly", // utilisé seulement en mode "external"
-    kmPerDay: 200,
-    extraKm: 0.35, // €/km au-delà du forfait
+    kmPerDay: 150, // TODO kilométrage inclus à confirmer
+    extraKm: 1.5, // TODO à confirmer // €/km au-delà du forfait
     releaseDays: 7, // délai de libération de l'empreinte après restitution
   },
 

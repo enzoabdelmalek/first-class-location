@@ -2,33 +2,34 @@
 
 /* ---------------------------------------------------------------
    Design tokens - First Class
-   Encre #0E0F11 · Ivoire #F3F0E9 · Champagne #C4A271
-   Une seule couleur chaude, employée par touches : le champagne
-   souligne, il ne remplit jamais de grandes surfaces.
+   Noir #0A0A0A · Blanc #FFFFFF · Rouge #DC0A14
+   Le noir et le blanc portent la page ; le rouge ne sert qu'en
+   touches (filets, chiffres, boutons d'action), jamais en aplat.
    --------------------------------------------------------------- */
 :root {
   color-scheme: light;
 
-  --paper: #f3f0e9; /* ivoire - surface dominante */
-  --paper-alt: #ebe6db; /* bandes alternées */
-  --surface: #fffdf9; /* cartes posées sur l'ivoire */
+  --paper: #ffffff;
+  --paper-alt: #f4f4f3; /* bandes alternées */
+  --surface: #ffffff;
 
-  --ink: #0e0f11;
-  --ink-soft: #17191d; /* surfaces sombres secondaires */
-  --ink-line: rgb(243 240 233 / 0.12);
-  --muted: #5d5a54;
-  --muted-on-ink: #a7a299;
+  --ink: #0a0a0a;
+  --ink-soft: #141414;
+  --ink-line: rgb(255 255 255 / 0.1);
+  --muted: #5c5c5c;
+  --muted-on-ink: #a3a3a3;
 
-  /* Champagne : --champagne sert sur fond sombre (décor, texte),
-     --champagne-ink est sa version assez foncée pour porter du texte
-     sur l'ivoire (contraste > 4.5:1). */
-  --champagne: #c4a271;
-  --champagne-ink: #7a5a2c;
+  /* Deux rouges, tous deux au-dessus de 4.5:1 :
+     --accent       fond de bouton (texte blanc 5.1:1) et texte rouge sur blanc
+     --accent-light texte rouge sur noir (5.6:1) */
+  --accent: #dc0a14;
+  --accent-hover: #b0060f;
+  --accent-light: #ff3b3f;
 
-  --line: rgb(14 15 17 / 0.12);
-  --line-strong: rgb(14 15 17 / 0.24);
+  --line: rgb(10 10 10 / 0.1);
+  --line-strong: rgb(10 10 10 / 0.22);
 
-  --shadow-card: 0 1px 2px rgb(14 15 17 / 0.04), 0 18px 40px -20px rgb(14 15 17 / 0.22);
+  --shadow-card: 0 1px 2px rgb(10 10 10 / 0.04), 0 24px 48px -28px rgb(10 10 10 / 0.28);
 }
 
 @theme inline {
@@ -40,16 +41,30 @@
   --color-ink-line: var(--ink-line);
   --color-muted: var(--muted);
   --color-muted-on-ink: var(--muted-on-ink);
-  --color-champagne: var(--champagne);
-  --color-champagne-ink: var(--champagne-ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
 
-  --font-display: var(--font-instrument), ui-serif, Georgia, serif;
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --shadow-card: var(--shadow-card);
+}
+
+/* Titres : Archivo en chasse étendue, capitales, graisse moyenne.
+   La largeur fait le caractère « sport » ; la graisse retenue, le premium. */
+.font-display {
+  font-stretch: 125%;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+.font-display .italic,
+.font-display.italic {
+  font-weight: 300;
 }
 
 html {
@@ -65,22 +80,23 @@ body {
 }
 
 ::selection {
-  background: var(--champagne);
-  color: var(--ink);
+  background: var(--accent);
+  color: #fff;
 }
 
 /* Surtitre : petites capitales espacées, la signature typographique du site. */
 .eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  font-stretch: 125%;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
 /* Champs de formulaire - un seul style partout. */
 .field {
   width: 100%;
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   border: 1px solid var(--line-strong);
   background: var(--surface);
   padding: 0.8rem 0.95rem;
@@ -91,10 +107,10 @@ body {
 .field:focus {
   outline: none;
   border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgb(196 162 113 / 0.35);
+  box-shadow: 0 0 0 3px rgb(220 10 20 / 0.18);
 }
 .field::placeholder {
-  color: #9a968e;
+  color: #9a9a9a;
 }
 
 /* Perforation de la carte d'embarquement. */

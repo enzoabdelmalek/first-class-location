@@ -1,242 +1,179 @@
 /**
- * Flotte et tarification.
+ * Véhicule et forfaits.
  *
- * ⚠️ MAQUETTE : modèles, tarifs et cautions sont des exemples pour la
- * validation de la direction artistique. À remplacer par la flotte réelle.
- * `image` accepte un chemin dans /public : tant qu'il est vide, la carte
- * affiche la silhouette dessinée correspondant à `body`.
+ * Données client (04/10/2026) : une Audi RS3 Sportback gris mat, cinq
+ * forfaits, caution de 6 000 €. Le modèle reste une liste pour accueillir
+ * d'autres véhicules plus tard sans toucher aux pages.
+ *
+ * ⚠️ À CONFIRMER avec le client : les jours de départ de chaque forfait
+ * (`startDays`), l'âge et l'ancienneté de permis minimum ; les options et
+ * leurs tarifs sont des propositions de la maquette.
  */
 
 export type Body = "citadine" | "compacte" | "suv" | "berline" | "utilitaire";
+
+export type Package = {
+  id: string;
+  label: string;
+  period: "Semaine" | "Week-end";
+  /** Durée en jours, pour calculer le retour et les options. */
+  days: number;
+  price: number;
+  /** Jours de départ autorisés (0 = dimanche … 6 = samedi). */
+  startDays: readonly number[];
+  rule: string;
+};
 
 export type Vehicle = {
   slug: string;
   brand: string;
   model: string;
+  finish: string;
   category: string;
   body: Body;
-  gearbox: "Manuelle" | "Automatique";
-  fuel: "Essence" | "Diesel" | "Hybride" | "Électrique";
-  seats: number;
-  bags: number;
-  doors: number;
-  pricePerDay: number;
+  headline: { value: string; label: string }[];
+  specs: { label: string; value: string }[];
   deposit: number;
   minAge: number;
   minLicenseYears: number;
+  packages: Package[];
   image?: string;
-  highlight?: string;
 };
 
 export const fleet: Vehicle[] = [
   {
-    slug: "peugeot-208",
-    brand: "Peugeot",
-    model: "208",
-    category: "Citadine",
-    body: "citadine",
-    gearbox: "Manuelle",
-    fuel: "Essence",
-    seats: 5,
-    bags: 2,
-    doors: 5,
-    pricePerDay: 39,
-    deposit: 800,
-    minAge: 21,
-    minLicenseYears: 2,
-  },
-  {
-    slug: "renault-clio-v",
-    brand: "Renault",
-    model: "Clio V E-Tech",
-    category: "Citadine",
-    body: "citadine",
-    gearbox: "Automatique",
-    fuel: "Hybride",
-    seats: 5,
-    bags: 2,
-    doors: 5,
-    pricePerDay: 45,
-    deposit: 800,
-    minAge: 21,
-    minLicenseYears: 2,
-    highlight: "La plus demandée",
-  },
-  {
-    slug: "volkswagen-golf-8",
-    brand: "Volkswagen",
-    model: "Golf 8",
-    category: "Compacte",
-    body: "compacte",
-    gearbox: "Automatique",
-    fuel: "Essence",
-    seats: 5,
-    bags: 3,
-    doors: 5,
-    pricePerDay: 59,
-    deposit: 1000,
-    minAge: 21,
-    minLicenseYears: 2,
-  },
-  {
-    slug: "mercedes-classe-a",
-    brand: "Mercedes-Benz",
-    model: "Classe A 180",
-    category: "Compacte premium",
-    body: "compacte",
-    gearbox: "Automatique",
-    fuel: "Essence",
-    seats: 5,
-    bags: 3,
-    doors: 5,
-    pricePerDay: 79,
-    deposit: 1500,
-    minAge: 23,
-    minLicenseYears: 3,
-  },
-  {
-    slug: "peugeot-3008",
-    brand: "Peugeot",
-    model: "3008 Hybrid",
-    category: "SUV",
-    body: "suv",
-    gearbox: "Automatique",
-    fuel: "Hybride",
-    seats: 5,
-    bags: 4,
-    doors: 5,
-    pricePerDay: 75,
-    deposit: 1200,
-    minAge: 21,
-    minLicenseYears: 2,
-    highlight: "Idéal en famille",
-  },
-  {
-    slug: "audi-q5",
+    slug: "audi-rs3-sportback",
     brand: "Audi",
-    model: "Q5 Sportback",
-    category: "SUV premium",
-    body: "suv",
-    gearbox: "Automatique",
-    fuel: "Diesel",
-    seats: 5,
-    bags: 4,
-    doors: 5,
-    pricePerDay: 129,
-    deposit: 2500,
-    minAge: 25,
-    minLicenseYears: 3,
-  },
-  {
-    slug: "mercedes-classe-c",
-    brand: "Mercedes-Benz",
-    model: "Classe C 220d",
-    category: "Berline premium",
-    body: "berline",
-    gearbox: "Automatique",
-    fuel: "Diesel",
-    seats: 5,
-    bags: 3,
-    doors: 4,
-    pricePerDay: 99,
-    deposit: 2000,
-    minAge: 25,
-    minLicenseYears: 3,
-    highlight: "First Class",
-  },
-  {
-    slug: "renault-trafic",
-    brand: "Renault",
-    model: "Trafic 9 places",
-    category: "Minibus",
-    body: "utilitaire",
-    gearbox: "Manuelle",
-    fuel: "Diesel",
-    seats: 9,
-    bags: 6,
-    doors: 4,
-    pricePerDay: 109,
-    deposit: 1500,
-    minAge: 23,
-    minLicenseYears: 3,
+    model: "RS3 Sportback",
+    finish: "Gris mat",
+    category: "Compacte sportive",
+    body: "compacte",
+    headline: [
+      { value: "400", label: "ch" },
+      { value: "3,8 s", label: "de 0 à 100 km/h" },
+      { value: "500", label: "Nm de couple" },
+      { value: "5", label: "cylindres" },
+    ],
+    specs: [
+      { label: "Moteur", value: "2.5 TFSI, 5 cylindres en ligne" },
+      { label: "Puissance", value: "400 ch" },
+      { label: "Couple", value: "500 Nm" },
+      { label: "0 à 100 km/h", value: "3,8 s" },
+      { label: "Transmission", value: "quattro, S tronic 7 rapports" },
+      { label: "Teinte", value: "Gris mat, teinte exclusive Audi" },
+      { label: "Places", value: "5" },
+    ],
+    deposit: 6000,
+    minAge: 25, // TODO à confirmer
+    minLicenseYears: 3, // TODO à confirmer
+    packages: [
+      {
+        id: "24h-semaine",
+        label: "24 h",
+        period: "Semaine",
+        days: 1,
+        price: 350,
+        startDays: [1, 2, 3, 4],
+        rule: "Départ du lundi au jeudi, retour le lendemain à la même heure.",
+      },
+      {
+        id: "48h-semaine",
+        label: "48 h",
+        period: "Semaine",
+        days: 2,
+        price: 650,
+        startDays: [1, 2, 3],
+        rule: "Départ du lundi au mercredi, retour 48 h plus tard.",
+      },
+      {
+        id: "lundi-vendredi",
+        label: "Lundi → Vendredi",
+        period: "Semaine",
+        days: 4,
+        price: 1200,
+        startDays: [1],
+        rule: "Départ le lundi, retour le vendredi.",
+      },
+      {
+        id: "48h-weekend",
+        label: "48 h",
+        period: "Week-end",
+        days: 2,
+        price: 1000,
+        startDays: [5],
+        rule: "Départ le vendredi, retour le dimanche.",
+      },
+      {
+        id: "72h-weekend",
+        label: "72 h",
+        period: "Week-end",
+        days: 3,
+        price: 1200,
+        startDays: [5],
+        rule: "Départ le vendredi, retour le lundi.",
+      },
+    ],
   },
 ];
 
-export const categories = ["Toutes", "Citadine", "Compacte", "SUV", "Berline", "Minibus"] as const;
+export const flagship = fleet[0];
 
 export function vehicleBySlug(slug: string | undefined) {
   return fleet.find((v) => v.slug === slug);
 }
 
-/** Correspondance large : « SUV » couvre « SUV premium », etc. */
-export function matchesCategory(vehicle: Vehicle, category: string) {
-  return category === "Toutes" || vehicle.category.startsWith(category);
+export function packageById(vehicle: Vehicle, id: string | undefined) {
+  return vehicle.packages.find((p) => p.id === id);
 }
 
-/* -------------------------- Tarification -------------------------- */
+/** Prix le plus bas, pour les accroches « dès … ». */
+export const fromPrice = (vehicle: Vehicle) => Math.min(...vehicle.packages.map((p) => p.price));
 
-/** Dégressivité selon la durée. Au-delà de 30 jours : longue durée, sur devis. */
-export const degressive = [
-  { minDays: 7, rate: 0.2, label: "-20 % dès 7 jours" },
-  { minDays: 3, rate: 0.1, label: "-10 % dès 3 jours" },
-];
+/* ----------------------------- Options ----------------------------- */
 
 export const extras = [
   {
     id: "serenite",
     label: "Protection Sérénité",
-    description: "Rachat partiel de franchise : votre caution est divisée par deux.",
-    perDay: 15,
-  },
-  {
-    id: "km",
-    label: "Kilométrage illimité",
-    description: "Roulez sans compter, au-delà du forfait de 200 km par jour.",
-    perDay: 12,
+    description: "Rachat partiel de franchise : en cas de sinistre, votre participation est réduite.",
+    perDay: 49,
   },
   {
     id: "conducteur",
     label: "Conducteur additionnel",
     description: "Un second conducteur, soumis aux mêmes conditions d'âge et de permis.",
-    perDay: 8,
+    perDay: 25,
   },
   {
-    id: "siege",
-    label: "Siège enfant",
-    description: "Siège auto homologué, installé avant votre arrivée.",
-    perDay: 5,
+    id: "plein",
+    label: "Plein à la restitution",
+    description: "Rendez le véhicule sans repasser à la pompe : nous faisons le plein pour vous.",
+    perDay: 20,
   },
 ] as const;
 
 export type ExtraId = (typeof extras)[number]["id"];
 
-/** Nombre de jours facturés : toute période de 24 h entamée est due. */
-export function rentalDays(start: Date, end: Date) {
-  const ms = end.getTime() - start.getTime();
-  if (!Number.isFinite(ms) || ms <= 0) return 0;
-  return Math.max(1, Math.ceil(ms / 86_400_000));
-}
-
 export function quote({
   vehicle,
-  days,
+  pack,
   extraIds,
   locationFee,
 }: {
   vehicle: Vehicle;
-  days: number;
+  pack: Package;
   extraIds: ExtraId[];
   locationFee: number;
 }) {
-  const base = vehicle.pricePerDay * days;
-  const tier = degressive.find((t) => days >= t.minDays);
-  const discount = tier ? Math.round(base * tier.rate) : 0;
   const extrasLines = extras
     .filter((e) => extraIds.includes(e.id))
-    .map((e) => ({ id: e.id, label: e.label, amount: e.perDay * days }));
+    .map((e) => ({ id: e.id, label: e.label, amount: e.perDay * pack.days }));
   const extrasTotal = extrasLines.reduce((sum, l) => sum + l.amount, 0);
-  const total = base - discount + extrasTotal + locationFee;
-  const deposit = extraIds.includes("serenite") ? vehicle.deposit / 2 : vehicle.deposit;
-
-  return { base, discount, tier, extrasLines, locationFee, total, deposit };
+  return {
+    base: pack.price,
+    extrasLines,
+    locationFee,
+    total: pack.price + extrasTotal + locationFee,
+    deposit: vehicle.deposit,
+  };
 }

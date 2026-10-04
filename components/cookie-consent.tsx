@@ -117,11 +117,11 @@ export function CookieConsent() {
       aria-labelledby="cookie-title"
       className="fixed inset-x-0 bottom-0 z-[60] p-3 sm:p-5"
     >
-      <div className="mx-auto max-w-3xl rounded-2xl border border-ink-line bg-ink p-5 text-paper shadow-2xl sm:p-7">
+      <div className="mx-auto max-w-3xl rounded-md border border-ink-line bg-ink p-5 text-paper shadow-2xl sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow text-champagne">Cookies</p>
-            <h2 id="cookie-title" className="mt-2 font-display text-2xl">
+            <p className="eyebrow text-accent-light">Cookies</p>
+            <h2 id="cookie-title" className="mt-2 font-display text-lg sm:text-2xl">
               Votre vie privée, vos règles.
             </h2>
           </div>
@@ -145,7 +145,7 @@ export function CookieConsent() {
         </p>
 
         {details ? (
-          <ul className="mt-5 divide-y divide-ink-line rounded-xl border border-ink-line">
+          <ul className="mt-5 divide-y divide-ink-line rounded-sm border border-ink-line">
             {purposes.map((p) => {
               const checked = p.locked ? true : choice[p.id as "analytics" | "marketing"];
               return (
@@ -163,7 +163,7 @@ export function CookieConsent() {
                       disabled={p.locked}
                       onChange={(e) => setChoice((c) => ({ ...c, [p.id]: e.target.checked }))}
                     />
-                    <span className="h-6 w-11 rounded-full bg-ink-line transition peer-checked:bg-champagne peer-focus-visible:ring-2 peer-focus-visible:ring-champagne peer-disabled:opacity-60" />
+                    <span className="h-6 w-11 rounded-full bg-ink-line transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-disabled:opacity-60" />
                     <span className="absolute left-1 h-4 w-4 rounded-full bg-paper transition peer-checked:translate-x-5" />
                   </label>
                 </li>
@@ -176,7 +176,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={() => decide({ analytics: false, marketing: false })}
-            className="rounded-full bg-paper px-5 py-3 text-sm font-semibold text-ink hover:bg-champagne"
+            className="rounded-sm bg-paper px-5 py-3 text-sm font-semibold text-ink hover:bg-accent"
           >
             Tout refuser
           </button>
@@ -184,7 +184,7 @@ export function CookieConsent() {
             <button
               type="button"
               onClick={() => decide(choice)}
-              className="rounded-full border border-paper/40 px-5 py-3 text-sm font-semibold hover:border-paper"
+              className="rounded-sm border border-paper/40 px-5 py-3 text-sm font-semibold hover:border-paper"
             >
               Enregistrer mes choix
             </button>
@@ -192,7 +192,7 @@ export function CookieConsent() {
             <button
               type="button"
               onClick={() => setDetails(true)}
-              className="rounded-full border border-paper/40 px-5 py-3 text-sm font-semibold hover:border-paper"
+              className="rounded-sm border border-paper/40 px-5 py-3 text-sm font-semibold hover:border-paper"
             >
               Personnaliser
             </button>
@@ -200,7 +200,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={() => decide({ analytics: true, marketing: true })}
-            className="rounded-full bg-paper px-5 py-3 text-sm font-semibold text-ink hover:bg-champagne"
+            className="rounded-sm bg-paper px-5 py-3 text-sm font-semibold text-ink hover:bg-accent"
           >
             Tout accepter
           </button>

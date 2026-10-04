@@ -67,3 +67,16 @@ export const PinIcon = ({ className }: IconProps) => (
     <circle cx="12" cy="9.5" r="2.5" />
   </svg>
 );
+
+export const BoltIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M13 3L5 13.5h6L10 21l8-10.5h-6L13 3z" />
+  </svg>
+);
+
+export const TimerIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <circle cx="12" cy="13.5" r="7.5" />
+    <path d="M12 13.5l3.5-3M10 2.5h4" />
+  </svg>
+);

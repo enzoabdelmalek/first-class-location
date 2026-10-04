@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalLayout, LegalSection } from "@/components/legal-layout";
+import { flagship } from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { euros } from "@/lib/utils";
 
@@ -32,26 +33,28 @@ export default function CglPage() {
 
       <LegalSection title="2. Conditions relatives au conducteur">
         <ul>
-          <li>Être âgé d’au moins 21 ans, et de 23 à 25 ans selon la catégorie du véhicule.</li>
-          <li>Être titulaire d’un permis B valide depuis au moins 2 ans, 3 ans pour les gammes premium.</li>
+          <li>Être âgé d’au moins 25 ans (23 à 26 ans selon le modèle, précisé sur chaque fiche).</li>
+          <li>Être titulaire d’un permis B valide depuis au moins 3 ans (5 ans pour certains modèles).</li>
           <li>Présenter, lors de la remise des clés, une pièce d’identité, le permis original et une carte bancaire à son nom.</li>
         </ul>
         <p>Seuls le locataire et les conducteurs additionnels déclarés au contrat sont autorisés à conduire le véhicule.</p>
       </LegalSection>
 
-      <LegalSection title="3. Réservation et paiement">
+      <LegalSection title="3. Forfaits, réservation et paiement">
         <p>
-          La réservation est ferme à réception du paiement intégral en ligne par carte bancaire. Les prix sont indiqués
-          en euros toutes taxes comprises. Toute période de 24 heures entamée est facturée comme une journée complète.
+          La location est proposée sous forme de forfaits à prix fixe (semaine ou week-end), dont la durée, les jours
+          de départ et le prix sont indiqués sur le site au moment de la réservation. La réservation est ferme à
+          réception du paiement intégral en ligne par carte bancaire. Les prix sont indiqués en euros toutes taxes
+          comprises.
         </p>
       </LegalSection>
 
       <LegalSection title="4. Caution">
         <p>
-          Une caution, dont le montant dépend du véhicule, est exigée. Elle prend la forme d’une empreinte bancaire :
-          le montant est bloqué sur la carte du locataire sans être débité, puis libéré dans un délai de{" "}
-          {booking.releaseDays} jours après la restitution du véhicule, déduction faite des sommes éventuellement dues
-          (dommages, carburant, kilomètres supplémentaires, amendes, frais de dossier).
+          Une caution de {euros(flagship.deposit)} est exigée. Elle prend la forme d’une empreinte bancaire : le montant
+          est bloqué sur la carte du locataire sans être débité, puis libéré dans un délai de {booking.releaseDays} jours
+          après la restitution du véhicule, déduction faite des sommes éventuellement dues (dommages, carburant,
+          kilomètres supplémentaires, amendes, frais de dossier).
         </p>
       </LegalSection>
 
@@ -68,8 +71,8 @@ export default function CglPage() {
 
       <LegalSection title="6. Kilométrage">
         <p>
-          Chaque journée de location inclut {booking.kmPerDay} km. Les kilomètres supplémentaires sont facturés{" "}
-          {euros(booking.extraKm)} par kilomètre, sauf souscription de l’option « Kilométrage illimité ».
+          Chaque journée de forfait inclut {booking.kmPerDay} km. Les kilomètres supplémentaires sont facturés{" "}
+          {euros(booking.extraKm)} par kilomètre.
         </p>
       </LegalSection>
 
@@ -77,7 +80,7 @@ export default function CglPage() {
         <p>
           Les véhicules sont couverts par une assurance responsabilité civile. En cas de dommage, de vol ou
           d’incendie, une franchise reste à la charge du locataire, dans la limite du montant de la caution. L’option
-          « Protection Sérénité » réduit cette franchise de moitié.
+          « Protection Sérénité » réduit cette franchise.
         </p>
       </LegalSection>
 

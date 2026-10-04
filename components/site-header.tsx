@@ -7,8 +7,8 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/vehicules", label: "Nos véhicules" },
-  { href: "/#longue-duree", label: "Longue durée" },
+  { href: "/vehicules", label: "Le véhicule" },
+  { href: "/#forfaits", label: "Forfaits" },
   { href: "/#fonctionnement", label: "Comment ça marche" },
   { href: "/#agence", label: "L'agence" },
 ];
@@ -42,7 +42,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/reserver"
-            className="hidden rounded-full bg-champagne px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-paper sm:inline-flex"
+            className="hidden rounded-sm bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-ink sm:inline-flex"
           >
             Réserver
           </Link>
@@ -72,7 +72,7 @@ export function SiteHeader() {
           <Link
             href="/reserver"
             onClick={() => setOpen(false)}
-            className="mt-6 rounded-full bg-champagne px-5 py-3.5 text-center font-semibold text-ink"
+            className="mt-6 rounded-sm bg-accent px-5 py-3.5 text-center font-semibold text-white"
           >
             Réserver un véhicule
           </Link>

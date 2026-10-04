@@ -1,20 +1,15 @@
 import Link from "next/link";
-import { CarSilhouette } from "@/components/car-silhouette";
 import { ArrowIcon, CheckIcon, LockIcon, PinIcon } from "@/components/icons";
-import { QuickSearch } from "@/components/quick-search";
-import { VehicleCard } from "@/components/vehicle-card";
-import { fleet } from "@/lib/fleet";
+import { PackageGrid, VehicleHeadline, VehicleVisual } from "@/components/vehicle";
+import { flagship as car, fromPrice } from "@/lib/fleet";
 import { site } from "@/lib/site";
-
-const featured = ["renault-clio-v", "peugeot-3008", "mercedes-classe-c", "renault-trafic"]
-  .map((slug) => fleet.find((v) => v.slug === slug)!)
-  .filter(Boolean);
+import { euros } from "@/lib/utils";
 
 const steps = [
   {
     code: "01",
     title: "Choisissez",
-    text: "Vos dates, votre lieu de prise en charge et le véhicule qui vous ressemble. Le prix s’affiche immédiatement, sans frais cachés.",
+    text: "Votre forfait, semaine ou week-end, et votre date de départ. Le prix est fixe, connu d’avance, sans frais cachés.",
   },
   {
     code: "02",
@@ -24,37 +19,37 @@ const steps = [
   {
     code: "03",
     title: "Prenez la route",
-    text: "Remise des clés à l’agence, à la gare ou chez vous. Un état des lieux rapide, et c’est parti.",
+    text: "Remise des clés en main propre, à l’agence ou chez vous, avec une prise en main du véhicule. Puis la route est à vous.",
   },
 ];
 
 const conditions = [
-  { label: "Âge minimum", value: "21 ans", note: "23 à 25 ans pour les gammes premium" },
-  { label: "Permis", value: "2 ans", note: "3 ans pour les gammes premium" },
-  { label: "Kilométrage", value: `${site.booking.kmPerDay} km / jour`, note: "Illimité en option" },
-  { label: "Caution", value: "Empreinte bancaire", note: "Non débitée, libérée après restitution" },
+  { label: "Âge minimum", value: `${car.minAge} ans`, note: "Pièce d’identité exigée" },
+  { label: "Permis B", value: `${car.minLicenseYears} ans`, note: "Permis original, en cours de validité" },
+  { label: "Caution", value: euros(car.deposit), note: "Par empreinte bancaire, jamais débitée" },
+  { label: "Paiement", value: "En ligne", note: "Carte bancaire au nom du conducteur" },
 ];
 
 const faq = [
   {
     q: "Quels documents dois-je présenter ?",
-    a: "Une pièce d’identité en cours de validité, votre permis de conduire et une carte bancaire au nom du conducteur principal. Un justificatif de domicile de moins de trois mois peut vous être demandé.",
+    a: "Une pièce d’identité en cours de validité, votre permis de conduire original et la carte bancaire ayant servi à la réservation, au nom du conducteur principal. Un justificatif de domicile de moins de trois mois peut vous être demandé.",
   },
   {
     q: "Comment fonctionne la caution ?",
-    a: "Au moment du paiement, nous enregistrons une empreinte bancaire du montant de la caution. Elle n’est pas débitée : elle est simplement bloquée puis libérée sous 7 jours après la restitution du véhicule.",
+    a: `Au moment du paiement, nous enregistrons une empreinte bancaire de ${euros(car.deposit)}. Elle n’est pas débitée : le montant est simplement bloqué, puis libéré sous ${site.booking.releaseDays} jours après la restitution du véhicule.`,
   },
   {
-    q: "Puis-je annuler ma réservation ?",
-    a: "Oui. L’annulation est gratuite jusqu’à 48 heures avant la prise en charge. Au-delà, les conditions générales de location s’appliquent.",
+    q: "Quelle est la différence entre les forfaits semaine et week-end ?",
+    a: "Les forfaits semaine démarrent du lundi au jeudi ; les forfaits week-end démarrent le vendredi. Le prix est fixe pour toute la durée du forfait.",
   },
   {
     q: "Le carburant est-il inclus ?",
-    a: "Le véhicule vous est remis avec le plein et doit être restitué avec le plein. À défaut, le carburant manquant est facturé au prix du marché, majoré de frais de service.",
+    a: "Le véhicule vous est remis avec le plein et doit être restitué avec le plein, sauf si vous choisissez l’option « Plein à la restitution ».",
   },
   {
-    q: "Livrez-vous le véhicule ?",
-    a: "Oui, nous livrons à la gare de Mantes-la-Jolie et à domicile dans les Yvelines. Le supplément s’affiche lors de la réservation.",
+    q: "Pouvez-vous livrer le véhicule ?",
+    a: "Oui, nous remettons les clés en main propre à la gare de Mantes-la-Jolie ou à domicile dans les Yvelines. Le supplément s’affiche lors de la réservation.",
   },
 ];
 
@@ -63,181 +58,156 @@ export default function HomePage() {
     <>
       {/* ---------------------------- Hero ---------------------------- */}
       <section className="relative overflow-hidden bg-ink text-paper">
-        <div className="blueprint-dark absolute inset-0 opacity-60" aria-hidden />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_40%,rgb(196_162_113/0.16),transparent_60%)]" aria-hidden />
-
-        <div className="relative mx-auto max-w-7xl px-4 pt-16 pb-10 sm:px-8 lg:pt-24">
-          <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_1fr]">
-            <div>
-              <p className="eyebrow rise flex items-center gap-2 text-champagne">
-                <PinIcon className="h-4 w-4" /> {site.city} · {site.area}
-              </p>
-              <h1 className="rise mt-6 font-display text-[3.4rem]/[0.95] tracking-tight text-balance sm:text-7xl/[0.95] lg:text-[6.2rem]/[0.92]">
-                La route, en <span className="text-champagne italic">première classe.</span>
-              </h1>
-              <p className="rise mt-7 max-w-lg text-lg/relaxed text-pretty text-muted-on-ink [animation-delay:120ms]">
-                Location de voitures courte et longue durée. Des véhicules récents, un prix clair, une réservation
-                réglée en trois minutes.
-              </p>
-            </div>
-
-            <div className="relative hidden lg:block">
-              <CarSilhouette body="berline" animated strokeWidth={1.2} className="w-full text-champagne" />
-              <p className="mt-3 text-right font-mono text-[0.68rem] tracking-[0.2em] text-muted-on-ink uppercase">
-                Mercedes-Benz Classe C · dès 99 € / jour
-              </p>
+        <div className="relative mx-auto max-w-7xl px-4 pt-14 sm:px-8 lg:pt-20">
+          <div className="text-center">
+            <p className="eyebrow rise inline-flex items-center gap-2 text-accent-light">
+              <PinIcon className="h-4 w-4" /> {site.city} · {site.area}
+            </p>
+            <h1 className="rise mt-6 font-display text-[2.5rem]/[1] text-balance sm:text-6xl/[1] lg:text-[5rem]/[1]">
+              Conduisez <span className="text-accent-light italic">l’exception.</span>
+            </h1>
+            <p className="rise mx-auto mt-6 max-w-xl text-base/relaxed text-pretty text-muted-on-ink [animation-delay:120ms] sm:text-lg/relaxed">
+              {car.brand} {car.model} en {car.finish.toLowerCase()}, une teinte exclusive Audi. 400 chevaux, cinq
+              cylindres, à vous le temps d’une journée ou d’un week-end.
+            </p>
+            <div className="rise mt-8 flex flex-col justify-center gap-3 [animation-delay:200ms] sm:flex-row">
+              <Link
+                href="/reserver"
+                className="inline-flex items-center justify-center gap-2 rounded-sm bg-accent px-7 py-4 font-semibold text-white transition hover:bg-accent-hover"
+              >
+                Réserver · dès {euros(fromPrice(car))}
+                <ArrowIcon className="h-4 w-4" />
+              </Link>
+              <Link
+                href="#forfaits"
+                className="inline-flex items-center justify-center rounded-sm border border-white/25 px-7 py-4 font-semibold transition hover:border-white"
+              >
+                Voir les forfaits
+              </Link>
             </div>
           </div>
 
-          <div className="rise mt-12 [animation-delay:240ms] lg:mt-16">
-            <QuickSearch />
+          <VehicleVisual vehicle={car} animated priority className="mx-auto mt-4 max-w-4xl" />
+
+          <div className="pb-4">
+            <VehicleHeadline vehicle={car} />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" aria-hidden />
+      </section>
+
+      {/* ---------------------------- Le modèle ---------------------------- */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
+        <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-20">
+          <div>
+            <p className="eyebrow text-accent">Le modèle</p>
+            <h2 className="mt-3 font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">
+              {car.brand} {car.model} <span className="text-accent italic">{car.finish}.</span>
+            </h2>
+            <p className="mt-6 max-w-lg text-base/relaxed text-muted">
+              La compacte la plus radicale d’Audi Sport, dans une finition mate rare. Un cinq cylindres au son
+              inimitable, la transmission quattro et un châssis réglé pour la route comme pour le plaisir.
+            </p>
+            <Link
+              href="/vehicules"
+              className="mt-8 inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
+            >
+              Fiche technique complète
+              <ArrowIcon className="h-4 w-4" />
+            </Link>
           </div>
 
-          <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-muted-on-ink">
-            {["Annulation gratuite jusqu’à 48 h", "Caution par empreinte, non débitée", "Livraison gare & domicile"].map(
-              (t) => (
-                <li key={t} className="flex items-center gap-2">
-                  <CheckIcon className="h-4 w-4 text-champagne" />
-                  {t}
-                </li>
-              ),
-            )}
-          </ul>
+          <dl className="divide-y divide-line border-y border-line">
+            {car.specs.map((s) => (
+              <div key={s.label} className="flex items-baseline justify-between gap-6 py-4">
+                <dt className="eyebrow text-muted">{s.label}</dt>
+                <dd className="text-right font-medium">{s.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
-      {/* ---------------------------- Flotte ---------------------------- */}
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div>
-            <p className="eyebrow text-champagne-ink">La flotte</p>
-            <h2 className="mt-3 max-w-xl font-display text-5xl/[1.02] tracking-tight text-balance">
-              Un véhicule pour chaque trajet.
-            </h2>
+      {/* ---------------------------- Forfaits ---------------------------- */}
+      <section id="forfaits" className="bg-ink text-paper">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div>
+              <p className="eyebrow text-accent-light">Forfaits</p>
+              <h2 className="mt-3 font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">
+                Un prix fixe, <span className="text-accent-light italic">tout compris.</span>
+              </h2>
+            </div>
+            <p className="max-w-sm text-sm/relaxed text-muted-on-ink">
+              Caution de {euros(car.deposit)} par empreinte bancaire, jamais débitée si le véhicule revient en bon état.
+            </p>
           </div>
-          <Link href="/vehicules" className="inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline">
-            Voir les {fleet.length} véhicules
-            <ArrowIcon className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((v) => (
-            <VehicleCard key={v.slug} vehicle={v} />
-          ))}
+          <div className="mt-12">
+            <PackageGrid vehicle={car} />
+          </div>
         </div>
       </section>
 
       {/* ---------------------------- Étapes ---------------------------- */}
-      <section id="fonctionnement" className="border-y border-line bg-paper-alt">
+      <section id="fonctionnement" className="border-b border-line">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-          <p className="eyebrow text-champagne-ink">Comment ça marche</p>
-          <h2 className="mt-3 max-w-2xl font-display text-5xl/[1.02] tracking-tight text-balance">
+          <p className="eyebrow text-accent">Comment ça marche</p>
+          <h2 className="mt-3 max-w-2xl font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">
             De la réservation aux clés, en trois étapes.
           </h2>
 
-          <ol className="mt-14 grid gap-5 md:grid-cols-3">
+          <ol className="mt-14 grid gap-px overflow-hidden border border-line bg-line md:grid-cols-3">
             {steps.map((s) => (
-              <li key={s.code} className="relative overflow-hidden rounded-2xl border border-line bg-surface">
-                <div className="flex items-center justify-between px-6 pt-6">
-                  <span className="font-mono text-xs tracking-[0.2em] text-muted">ÉTAPE</span>
-                  <span className="font-display text-5xl text-champagne-ink">{s.code}</span>
-                </div>
-                <div className="perforation mx-6 my-5" aria-hidden />
-                <div className="px-6 pb-7">
-                  <h3 className="font-display text-3xl">{s.title}</h3>
-                  <p className="mt-3 text-sm/relaxed text-muted">{s.text}</p>
-                </div>
+              <li key={s.code} className="bg-paper p-7 sm:p-9">
+                <span className="font-display text-4xl text-accent">{s.code}</span>
+                <h3 className="mt-8 font-display text-xl">{s.title}</h3>
+                <p className="mt-3 text-sm/relaxed text-muted">{s.text}</p>
               </li>
             ))}
           </ol>
         </div>
       </section>
 
-      {/* ---------------------------- Longue durée ---------------------------- */}
-      <section id="longue-duree" className="relative overflow-hidden bg-ink text-paper">
-        <div className="blueprint-dark absolute inset-0 opacity-40" aria-hidden />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-8 lg:grid-cols-2 lg:py-28">
-          <div>
-            <p className="eyebrow text-champagne">Longue durée</p>
-            <h2 className="mt-3 font-display text-5xl/[1.02] tracking-tight text-balance">
-              Un mois, six mois, un an. <span className="text-champagne italic">Sans engagement d’achat.</span>
-            </h2>
-            <p className="mt-6 max-w-lg text-base/relaxed text-muted-on-ink">
-              Pour les particuliers comme pour les professionnels : un véhicule à disposition, un loyer mensuel fixe,
-              et un tarif établi sur mesure selon la durée et le kilométrage dont vous avez besoin.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href={`mailto:${site.contact.email}?subject=Demande%20de%20devis%20longue%20dur%C3%A9e`}
-                className="inline-flex items-center gap-2 rounded-full bg-champagne px-6 py-3.5 font-semibold text-ink hover:bg-paper"
-              >
-                Demander un devis
-                <ArrowIcon className="h-4 w-4" />
-              </a>
-              <a href={`tel:${site.contact.phone}`} className="inline-flex items-center rounded-full border border-paper/30 px-6 py-3.5 font-semibold hover:border-paper">
-                {site.contact.phoneDisplay}
-              </a>
-            </div>
-          </div>
-
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink-line bg-ink-line">
-            {[
-              ["1 à 24", "mois de location"],
-              ["Fixe", "loyer mensuel"],
-              ["Inclus", "assurance & assistance"],
-              ["Sur mesure", "kilométrage annuel"],
-            ].map(([value, label]) => (
-              <div key={label} className="bg-ink-soft p-6 sm:p-8">
-                <dt className="sr-only">{label}</dt>
-                <dd>
-                  <span className="block font-display text-4xl text-champagne">{value}</span>
-                  <span className="mt-2 block text-sm text-muted-on-ink">{label}</span>
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
       {/* ---------------------------- Conditions ---------------------------- */}
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr]">
-          <div>
-            <p className="eyebrow text-champagne-ink">Conditions</p>
-            <h2 className="mt-3 font-display text-5xl/[1.02] tracking-tight text-balance">L’essentiel, avant de réserver.</h2>
-            <p className="mt-5 max-w-sm text-base/relaxed text-muted">
-              Le détail figure dans nos{" "}
-              <Link href="/conditions-generales" className="text-champagne-ink underline underline-offset-4">
-                conditions générales de location
-              </Link>
-              .
-            </p>
+      <section className="bg-paper-alt">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr]">
+            <div>
+              <p className="eyebrow text-accent">Conditions</p>
+              <h2 className="mt-3 font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">L’essentiel, avant de réserver.</h2>
+              <p className="mt-5 max-w-sm text-base/relaxed text-muted">
+                Le détail figure dans nos{" "}
+                <Link href="/conditions-generales" className="text-accent underline underline-offset-4">
+                  conditions générales de location
+                </Link>
+                .
+              </p>
+            </div>
+            <dl className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2">
+              {conditions.map((c) => (
+                <div key={c.label} className="bg-surface p-6 sm:p-8">
+                  <dt className="eyebrow text-muted">{c.label}</dt>
+                  <dd className="mt-3 font-display text-2xl">{c.value}</dd>
+                  <dd className="mt-1 text-sm text-muted">{c.note}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-          <dl className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
-            {conditions.map((c) => (
-              <div key={c.label} className="bg-surface p-6 sm:p-8">
-                <dt className="eyebrow text-muted">{c.label}</dt>
-                <dd className="mt-3 font-display text-3xl">{c.value}</dd>
-                <dd className="mt-1 text-sm text-muted">{c.note}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
 
       {/* ---------------------------- FAQ + agence ---------------------------- */}
-      <section className="border-t border-line bg-paper-alt">
+      <section>
         <div className="mx-auto grid max-w-7xl gap-14 px-4 py-20 sm:px-8 lg:grid-cols-[1.4fr_1fr] lg:py-28">
           <div>
-            <p className="eyebrow text-champagne-ink">Questions fréquentes</p>
-            <h2 className="mt-3 font-display text-5xl/[1.02] tracking-tight">Bon à savoir.</h2>
+            <p className="eyebrow text-accent">Questions fréquentes</p>
+            <h2 className="mt-3 font-display text-3xl/[1.08] sm:text-4xl/[1.08]">Bon à savoir.</h2>
             <div className="mt-10 divide-y divide-line border-y border-line">
               {faq.map((item) => (
                 <details key={item.q} className="group py-5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-display text-2xl [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-medium [&::-webkit-details-marker]:hidden">
                     {item.q}
-                    <span aria-hidden className="text-champagne-ink transition group-open:rotate-45">
+                    <span aria-hidden className="text-2xl font-light text-accent transition group-open:rotate-45">
                       +
                     </span>
                   </summary>
@@ -247,9 +217,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          <aside id="agence" className="self-start rounded-2xl bg-ink p-7 text-paper sm:p-9">
-            <p className="eyebrow text-champagne">L’agence</p>
-            <p className="mt-4 font-display text-3xl">
+          <aside id="agence" className="self-start bg-ink p-7 text-paper sm:p-9">
+            <p className="eyebrow text-accent-light">L’agence</p>
+            <p className="mt-4 font-display text-xl/snug">
               {site.address.street}
               <br />
               {site.address.postalCode} {site.address.city}
@@ -267,18 +237,23 @@ export default function HomePage() {
                 href={site.mapsUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-champagne px-5 py-3 font-semibold text-ink hover:bg-paper"
+                className="inline-flex items-center justify-center gap-2 rounded-sm bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
               >
                 Itinéraire
                 <ArrowIcon className="h-4 w-4" />
               </a>
-              <a href={`tel:${site.contact.phone}`} className="inline-flex items-center justify-center rounded-full border border-paper/30 px-5 py-3 font-semibold hover:border-paper">
+              <a href={`tel:${site.contact.phone}`} className="inline-flex items-center justify-center rounded-sm border border-white/25 px-5 py-3 font-semibold hover:border-white">
                 {site.contact.phoneDisplay}
               </a>
             </div>
-            <p className="mt-6 flex items-center gap-2 text-xs text-muted-on-ink">
-              <LockIcon className="h-4 w-4 text-champagne" /> Paiement en ligne sécurisé
-            </p>
+            <ul className="mt-7 space-y-2 text-xs text-muted-on-ink">
+              <li className="flex items-center gap-2">
+                <LockIcon className="h-4 w-4 text-accent-light" /> Paiement en ligne sécurisé
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckIcon className="h-4 w-4 text-accent-light" /> Remise des clés en main propre
+              </li>
+            </ul>
           </aside>
         </div>
       </section>
