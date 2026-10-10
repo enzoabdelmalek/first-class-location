@@ -44,11 +44,7 @@ export const site = {
     country: "FR",
   },
 
-  // TODO horaires réels
-  hours: [
-    { days: "Lundi - Samedi", value: "8h - 20h" },
-    { days: "Dimanche", value: "Sur rendez-vous" },
-  ],
+  hours: [{ days: "Tous les jours", value: "8h - 20h" }],
 
   /**
    * Lieux de remise des clés proposés à la réservation : pas d'agence

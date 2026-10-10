@@ -85,7 +85,20 @@ export function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {site.legal.tradeName} - {site.legal.ownerName}, EI · SIRET {site.legal.siret}
           </p>
-          <p>Réservation en ligne · Paiement sécurisé</p>
+          {/* Signature de l'agence. Lien suivi volontairement : c'est ce qui en
+              fait un vrai signal pour les moteurs, et donc la contrepartie SEO
+              d'un site livré. */}
+          <p>
+            Powered &amp; Designed by{" "}
+            <a
+              href="https://www.vibewebagency.fr"
+              target="_blank"
+              rel="noopener"
+              className="underline decoration-1 underline-offset-4 transition-colors hover:text-paper"
+            >
+              Vibe Web Agency
+            </a>
+          </p>
         </div>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon, CheckIcon, LockIcon, PinIcon } from "@/components/icons";
-import { QuickBooking } from "@/components/quick-booking";
+import { DateSearch } from "@/components/date-search";
 import { FleetGrid } from "@/components/vehicle";
 import { fleet, fleetFromPrice, fleetMinAge } from "@/lib/fleet";
 import { site } from "@/lib/site";
@@ -108,7 +108,7 @@ export default function HomePage() {
               paiement en ligne, en quelques minutes.
             </p>
             <div className="rise [animation-delay:200ms]">
-              <QuickBooking />
+              <DateSearch className="mx-auto mt-8 max-w-3xl" />
               <Link href="/vehicules" className="mt-4 inline-block text-sm text-muted-on-ink underline-offset-4 hover:text-paper hover:underline">
                 Parcourir la flotte
               </Link>

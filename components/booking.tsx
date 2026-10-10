@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CarSilhouette } from "@/components/car-silhouette";
+import { isAvailable } from "@/lib/availability";
 import { DocumentUpload, type Upload } from "@/components/document-upload";
 import { Logo } from "@/components/logo";
 import { ArrowIcon, CheckIcon, LockIcon, ShieldIcon } from "@/components/icons";
@@ -194,6 +195,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       else if (days <= 0) e.to = "La fin doit suivre le début.";
       else if (days > MAX_ONLINE_DAYS) e.to = `Au-delà de ${MAX_ONLINE_DAYS} jours, contactez-nous pour un devis.`;
       if (!vehicle) e.vehicle = "Choisissez un véhicule.";
+      else if (start && end && !isAvailable(vehicle, start, end)) e.vehicle = "Ce véhicule est déjà réservé à ces dates : choisissez-en un autre ou changez de dates.";
       if (!handover.trim()) e.handover = "Indiquez où vous remettre les clés.";
     }
     if (name === "Conducteur" && start && vehicle) {
@@ -353,8 +355,9 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 <div className="grid gap-3">
                   {fleet.map((v) => {
                     const t = start && end ? tariff(v, start, end) : null;
+                    const taken = !!start && !!end && !isAvailable(v, start, end);
                     return (
-                      <Choice key={v.slug} name="vehicle" checked={slug === v.slug} onChange={() => setSlug(v.slug)}>
+                      <Choice key={v.slug} name="vehicle" checked={slug === v.slug} disabled={taken} onChange={() => setSlug(v.slug)}>
                         <span className="flex items-center gap-4">
                           <CarSilhouette body={v.body} className="w-20 shrink-0 text-muted sm:w-24" strokeWidth={1.6} />
                           <span className="min-w-0 flex-1">
@@ -366,7 +369,9 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                             </span>
                           </span>
                           <span className="shrink-0 text-right">
-                            {t?.kind === "price" ? (
+                            {taken ? (
+                              <span className="block text-sm text-muted">Indisponible</span>
+                            ) : t?.kind === "price" ? (
                               <>
                                 <span className="block font-display text-lg leading-none">{euros(t.price)}</span>
                                 <span className="mt-1 block text-xs text-muted">{tariffLabel(t)}</span>
@@ -862,15 +867,29 @@ function Field({ label, error, className, children }: { label: string; error?: s
   );
 }
 
-function Choice({ name, checked, onChange, children }: { name: string; checked: boolean; onChange: () => void; children: ReactNode }) {
+function Choice({
+  name,
+  checked,
+  disabled = false,
+  onChange,
+  children,
+}: {
+  name: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: () => void;
+  children: ReactNode;
+}) {
   return (
     <label
       className={cn(
-        "relative block cursor-pointer rounded-sm border bg-surface p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent sm:p-5",
-        checked ? "border-ink shadow-card ring-1 ring-ink" : "border-line-strong hover:border-ink",
+        "relative block rounded-sm border bg-surface p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent sm:p-5",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        checked ? "border-ink shadow-card ring-1 ring-ink" : "border-line-strong",
+        !checked && !disabled && "hover:border-ink",
       )}
     >
-      <input type="radio" name={name} checked={checked} onChange={onChange} className="sr-only" />
+      <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onChange} className="sr-only" />
       {checked ? <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-accent" /> : null}
       {children}
     </label>

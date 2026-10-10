@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { CarSilhouette } from "@/components/car-silhouette";
 import { ArrowIcon } from "@/components/icons";
-import { fromPrice, type Vehicle } from "@/lib/fleet";
+import type { Offer } from "@/lib/availability";
+import { fromPrice, tariffLabel, type Vehicle } from "@/lib/fleet";
 import { cn, euros } from "@/lib/utils";
 
 /**
@@ -42,7 +43,7 @@ export function VehicleVisual({
             className="object-cover"
           />
           {/* Assombrit le haut et le bas de la photo : les libellés posés dessus restent lisibles. */}
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ink/60 via-transparent to-ink/40" />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ink/85 via-transparent via-40% to-ink/40" />
         </>
       ) : (
         <>
@@ -144,20 +145,37 @@ export function PackageGrid({ vehicle }: { vehicle: Vehicle }) {
  * la fiche. Au survol (écrans avec souris), les chiffres clés et la caution
  * remontent sur le visuel ; sur écran tactile, ils restent affichés sous le
  * nom, puisque le survol n'y existe pas.
+ *
+ * Avec `stay` (recherche par dates) : prix exact pour la période et lien
+ * direct vers la réservation, dates remplies ; grisée si le véhicule est
+ * déjà pris.
  */
-export function VehicleCard({ vehicle, className }: { vehicle: Vehicle; className?: string }) {
+export function VehicleCard({
+  vehicle,
+  stay,
+  className,
+}: {
+  vehicle: Vehicle;
+  stay?: { du: string; au: string; offer: Offer };
+  className?: string;
+}) {
+  const offer = stay?.offer;
+  const bookable = offer?.available && offer.rate?.kind === "price";
+  const href = bookable ? `/reserver?vehicule=${vehicle.slug}&du=${stay!.du}&au=${stay!.au}` : `/vehicules/${vehicle.slug}`;
+
   return (
     <Link
-      href={`/vehicules/${vehicle.slug}`}
+      href={href}
       className={cn(
         "group relative flex flex-col overflow-hidden border border-ink-line bg-ink text-paper transition hover:border-accent/70 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none",
+        offer && !offer.available && "opacity-55 grayscale hover:opacity-80",
         className,
       )}
     >
       <div className="relative">
         <VehicleVisual vehicle={vehicle} ratio="aspect-[16/9]" />
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
-          <span className="eyebrow text-muted-on-ink">{vehicle.category}</span>
+          <span className={cn("eyebrow", vehicle.image ? "text-paper" : "text-muted-on-ink")}>{vehicle.category}</span>
           {vehicle.placeholder ? (
             <span className="rounded-sm border border-white/25 px-2 py-0.5 font-mono text-[0.6rem] tracking-[0.15em] text-muted-on-ink uppercase">
               Exemple
@@ -199,12 +217,30 @@ export function VehicleCard({ vehicle, className }: { vehicle: Vehicle; classNam
           · caution {euros(vehicle.deposit)}
         </p>
         <div className="mt-auto flex items-end justify-between gap-4 pt-6">
-          <p>
-            <span className="text-xs text-muted-on-ink">dès </span>
-            <span className="font-display text-2xl">{euros(fromPrice(vehicle))}</span>
-          </p>
-          <span className="inline-flex items-center gap-2 text-sm font-semibold transition group-hover:text-accent-light">
-            Voir la fiche
+          {offer && !offer.available ? (
+            <p className="text-sm text-muted-on-ink">Indisponible à ces dates</p>
+          ) : offer?.rate?.kind === "price" ? (
+            <p>
+              <span className="block font-display text-2xl leading-none">{euros(offer.rate.price)}</span>
+              <span className="mt-1 block text-xs text-muted-on-ink">
+                {offer.rate.days} jour{offer.rate.days > 1 ? "s" : ""} · {tariffLabel(offer.rate)}
+              </span>
+            </p>
+          ) : offer ? (
+            <p className="text-sm text-muted-on-ink">Sur devis</p>
+          ) : (
+            <p>
+              <span className="text-xs text-muted-on-ink">dès </span>
+              <span className="font-display text-2xl">{euros(fromPrice(vehicle))}</span>
+            </p>
+          )}
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-2 text-sm font-semibold transition",
+              bookable ? "rounded-sm bg-accent px-4 py-2.5 text-white group-hover:bg-accent-hover" : "group-hover:text-accent-light",
+            )}
+          >
+            {bookable ? "Réserver" : "Voir la fiche"}
             <ArrowIcon className="h-4 w-4 transition group-hover:translate-x-1" />
           </span>
         </div>
@@ -220,6 +256,19 @@ export function FleetGrid({ vehicles }: { vehicles: Vehicle[] }) {
       {vehicles.map((v) => (
         <li key={v.slug} className="flex">
           <VehicleCard vehicle={v} className="w-full" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Grille pour une recherche par dates : prix de la période, disponibilité. */
+export function OfferGrid({ offers, du, au }: { offers: Offer[]; du: string; au: string }) {
+  return (
+    <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {offers.map((o) => (
+        <li key={o.vehicle.slug} className="flex">
+          <VehicleCard vehicle={o.vehicle} stay={{ du, au, offer: o }} className="w-full" />
         </li>
       ))}
     </ul>
