@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import type { ReactNode } from "react";
 import type { quote, Vehicle } from "@/lib/fleet";
 import { site } from "@/lib/site";
@@ -53,9 +54,7 @@ export function RentalContract({
   return (
     <article className="max-h-[32rem] overflow-y-auto rounded-sm border border-line-strong bg-surface text-sm/relaxed" tabIndex={0} aria-label="Contrat de location">
       <header className="flex items-center justify-between border-b border-line px-5 py-4 sm:px-7">
-        <span className="text-xs font-semibold tracking-[0.18em] [font-stretch:125%]">
-          FIRST <span className="text-accent">/</span> CLASS
-        </span>
+        <Logo tone="sombre" className="h-9" />
         <span className="eyebrow text-muted">Contrat de location</span>
       </header>
 

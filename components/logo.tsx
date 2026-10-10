@@ -1,23 +1,36 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Logotype provisoire : « FIRST CLASS » en chasse étendue, séparé par un
- * trait rouge incliné - un clin d'œil aux bandes des sportives. À remplacer
- * par le logo du client s'il en a un.
+ * Logo du client (« FIRST CLASS · Luxury car rental »), détouré à partir de
+ * sa carte de visite : `public/brand/logo-clair.png` pour les fonds sombres,
+ * `logo-sombre.png` pour les fonds clairs. À remplacer par le fichier
+ * vectoriel d'origine dès que le client le fournit.
  */
-export function Logo({ className, subtitle = true }: { className?: string; subtitle?: boolean }) {
+const variants = {
+  clair: { src: "/brand/logo-clair.png", width: 593, height: 276 },
+  sombre: { src: "/brand/logo-sombre.png", width: 519, height: 222 },
+} as const;
+
+export function Logo({
+  tone = "clair",
+  priority = false,
+  className,
+}: {
+  /** « clair » : logo blanc, pour fond sombre ; « sombre » : logo noir, pour fond clair. */
+  tone?: keyof typeof variants;
+  priority?: boolean;
+  className?: string;
+}) {
+  const v = variants[tone];
   return (
-    <span className={cn("inline-flex flex-col leading-none", className)}>
-      <span className="flex items-center gap-2 text-[1.05rem] tracking-[0.18em] [font-stretch:125%]">
-        <span className="font-semibold">FIRST</span>
-        <span aria-hidden className="h-3.5 w-[3px] skew-x-[-20deg] bg-accent" />
-        <span className="font-light">CLASS</span>
-      </span>
-      {subtitle ? (
-        <span className="mt-1.5 text-[0.55rem] font-medium tracking-[0.34em] uppercase opacity-55 [font-stretch:110%]">
-          Luxe · Paris
-        </span>
-      ) : null}
-    </span>
+    <Image
+      src={v.src}
+      alt="First Class, location de voitures de luxe"
+      width={v.width}
+      height={v.height}
+      priority={priority}
+      className={cn("h-11 w-auto", className)}
+    />
   );
 }

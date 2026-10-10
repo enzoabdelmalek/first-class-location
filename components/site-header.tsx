@@ -21,7 +21,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-ink-line bg-ink/95 text-paper backdrop-blur">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-8">
         <Link href="/" aria-label="First Class - accueil" className="text-paper">
-          <Logo />
+          <Logo priority className="h-12 sm:h-[3.25rem]" />
         </Link>
 
         <nav aria-label="Navigation principale" className="hidden items-center gap-8 lg:flex">

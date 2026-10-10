@@ -17,7 +17,7 @@ export function SiteFooter() {
     <footer className="bg-ink text-paper">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-8 md:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-5">
-          <Logo />
+          <Logo className="h-20" />
           <p className="max-w-xs text-sm/relaxed text-muted-on-ink">
             Location de voitures de luxe et sportives à {site.city}, livrées partout en {site.area}.
           </p>

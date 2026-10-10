@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CarSilhouette } from "@/components/car-silhouette";
 import { DocumentUpload, type Upload } from "@/components/document-upload";
+import { Logo } from "@/components/logo";
 import { ArrowIcon, CheckIcon, LockIcon, ShieldIcon } from "@/components/icons";
 import { RentalContract } from "@/components/rental-contract";
 import { SignaturePad } from "@/components/signature-pad";
@@ -909,9 +910,7 @@ function Summary({
   return (
     <div className="overflow-hidden bg-ink text-paper shadow-card">
       <div className="flex items-center justify-between border-b border-ink-line px-6 py-4">
-        <span className="text-xs font-semibold tracking-[0.18em] whitespace-nowrap [font-stretch:125%]">
-          FIRST <span className="text-accent-light">/</span> CLASS
-        </span>
+        <Logo className="h-8" />
         <span className="eyebrow text-muted-on-ink">Récapitulatif</span>
       </div>
 
@@ -1041,9 +1040,7 @@ function Confirmation({
 
       <div className="rise mt-10 overflow-hidden bg-ink text-paper shadow-2xl">
         <div className="flex items-center justify-between border-b border-ink-line px-6 py-4 sm:px-8">
-          <span className="text-sm font-semibold tracking-[0.18em] [font-stretch:125%]">
-            FIRST <span className="text-accent-light">/</span> CLASS
-          </span>
+          <Logo className="h-9" />
           <span className="font-mono text-sm tracking-[0.2em] text-accent-light">{code}</span>
         </div>
         <div className="grid gap-6 px-6 py-7 sm:grid-cols-2 sm:px-8">
