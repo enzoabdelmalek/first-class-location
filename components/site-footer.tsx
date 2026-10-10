@@ -30,18 +30,18 @@ export function SiteFooter() {
               {site.city} · {site.area}
             </p>
             <p className="pt-3">
-              <a href={`tel:${site.contact.phone}`} className="text-paper hover:text-accent-light">
+              <a href={`tel:${site.contact.phone}`} className="inline-block py-1 text-paper hover:text-accent-light">
                 {site.contact.phoneDisplay}
               </a>
             </p>
             <p>
-              <a href={`mailto:${site.contact.email}`} className="text-paper hover:text-accent-light">
+              <a href={`mailto:${site.contact.email}`} className="inline-block py-1 text-paper hover:text-accent-light">
                 {site.contact.email}
               </a>
             </p>
             <p className="flex flex-wrap gap-x-4 gap-y-1 pt-3">
               {site.socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer noopener" className="text-paper hover:text-accent-light">
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer noopener" className="inline-block py-1 text-paper hover:text-accent-light">
                   {s.label}
                 </a>
               ))}
@@ -63,16 +63,16 @@ export function SiteFooter() {
 
         <div>
           <p className="eyebrow text-accent-light">Informations</p>
-          <ul className="mt-4 space-y-2 text-sm">
+          <ul className="mt-3 space-y-0.5 text-sm">
             {legalLinks.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-muted-on-ink hover:text-paper">
+                <Link href={l.href} className="inline-block py-1 text-muted-on-ink hover:text-paper">
                   {l.label}
                 </Link>
               </li>
             ))}
             <li>
-              <CookieSettingsButton className="text-muted-on-ink hover:text-paper">
+              <CookieSettingsButton className="inline-block py-1 text-muted-on-ink hover:text-paper">
                 Gérer mes cookies
               </CookieSettingsButton>
             </li>
@@ -94,7 +94,7 @@ export function SiteFooter() {
               href="https://www.vibewebagency.fr"
               target="_blank"
               rel="noopener"
-              className="underline decoration-1 underline-offset-4 transition-colors hover:text-paper"
+              className="inline-block py-1 underline decoration-1 underline-offset-4 transition-colors hover:text-paper"
             >
               Vibe Web Agency
             </a>

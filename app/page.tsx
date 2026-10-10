@@ -109,7 +109,7 @@ export default function HomePage() {
             </p>
             <div className="rise [animation-delay:200ms]">
               <DateSearch className="mx-auto mt-8 max-w-3xl" />
-              <Link href="/vehicules" className="mt-4 inline-block text-sm text-muted-on-ink underline-offset-4 hover:text-paper hover:underline">
+              <Link href="/vehicules" className="mt-2 inline-block py-2 text-sm text-muted-on-ink underline-offset-4 hover:text-paper hover:underline">
                 Parcourir la flotte
               </Link>
             </div>

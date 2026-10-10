@@ -52,7 +52,7 @@ export default async function VehiclePage({ params }: PageProps<"/vehicules/[slu
             <p className="eyebrow rise text-accent-light">
               {car.category} · {car.finish}
             </p>
-            <h1 className="rise mt-4 font-display text-4xl/[1.02] sm:text-6xl/[1.02]">
+            <h1 className="rise mt-4 font-display text-[2rem]/[1.05] [overflow-wrap:anywhere] min-[400px]:text-4xl/[1.02] sm:text-6xl/[1.02]">
               {car.brand} <span className="text-accent-light italic">{car.model}</span>
             </h1>
           </div>

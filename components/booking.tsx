@@ -359,7 +359,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                     return (
                       <Choice key={v.slug} name="vehicle" checked={slug === v.slug} disabled={taken} onChange={() => setSlug(v.slug)}>
                         <span className="flex items-center gap-4">
-                          <CarSilhouette body={v.body} className="w-20 shrink-0 text-muted sm:w-24" strokeWidth={1.6} />
+                          <CarSilhouette body={v.body} className="hidden w-20 shrink-0 text-muted min-[400px]:block sm:w-24" strokeWidth={1.6} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold">
                               {v.brand} {v.model}
@@ -796,7 +796,11 @@ export function Booking({ initial }: { initial: BookingInitial }) {
           <p className="eyebrow text-muted-on-ink">
             Étape {step + 1}/{STEPS.length}
           </p>
-          <p className="truncate font-display text-xl leading-tight">{price ? euros(price.total) : !start || !end ? "Vos dates" : "Votre véhicule"}</p>
+          {price ? (
+            <p className="truncate font-display text-xl leading-tight">{euros(price.total)}</p>
+          ) : (
+            <p className="truncate text-sm">{!start || !end ? "Vos dates" : "Votre véhicule"}</p>
+          )}
         </div>
         <button
           type="submit"
@@ -930,7 +934,7 @@ function Summary({
     <div className="overflow-hidden bg-ink text-paper shadow-card">
       <div className="flex items-center justify-between border-b border-ink-line px-6 py-4">
         <Logo className="h-8" />
-        <span className="eyebrow text-muted-on-ink">Récapitulatif</span>
+        <span className="eyebrow hidden text-muted-on-ink min-[380px]:inline">Récapitulatif</span>
       </div>
 
       <div className="px-6 pt-6">
