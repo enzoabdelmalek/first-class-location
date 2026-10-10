@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowIcon, CheckIcon, LockIcon, PinIcon } from "@/components/icons";
 import { QuickBooking } from "@/components/quick-booking";
-import { PackageGrid, VehicleHeadline, VehicleVisual } from "@/components/vehicle";
-import { flagship as car, fromPrice } from "@/lib/fleet";
+import { FleetGrid } from "@/components/vehicle";
+import { fleet, fleetFromPrice, fleetMinAge } from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { euros } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ const steps = [
   {
     code: "01",
     title: "Choisissez",
-    text: "Vos dates et l’adresse où vous remettre les clés, dans Paris ou en Île-de-France. Le forfait s’applique automatiquement, sans frais cachés.",
+    text: "Vos dates, votre véhicule et l’adresse où vous remettre les clés, dans Paris ou en Île-de-France. Le forfait s’applique automatiquement, sans frais cachés.",
   },
   {
     code: "02",
@@ -24,17 +24,20 @@ const steps = [
   },
 ];
 
+const minDeposit = Math.min(...fleet.map((v) => v.deposit));
+const minLicense = Math.min(...fleet.map((v) => v.minLicenseYears));
+
 const conditions = [
-  { label: "Âge minimum", value: `${car.minAge} ans`, note: "Révolus au jour du départ" },
-  { label: "Permis B", value: `${car.minLicenseYears} ans`, note: "Permis original, en cours de validité" },
-  { label: "Caution", value: euros(car.deposit), note: "Empreinte bancaire, levée au retour" },
-  { label: "Paiement", value: "En ligne", note: "Carte bancaire au nom du conducteur" },
+  { label: "Âge minimum", value: `Dès ${fleetMinAge} ans`, note: "Selon le véhicule, révolus au départ" },
+  { label: "Permis B", value: `Dès ${minLicense} ans`, note: "Selon le véhicule, en cours de validité" },
+  { label: "Caution", value: `Dès ${euros(minDeposit)}`, note: "Empreinte ou espèces, rendue au retour" },
+  { label: "Paiement", value: "En ligne", note: "Carte bancaire, contrat signé à l’écran" },
 ];
 
 const faq = [
   {
     q: "Quels documents dois-je fournir ?",
-    a: "À la réservation, une photo recto verso de votre carte d’identité (ou de la page photo de votre passeport) et de votre permis de conduire, avec leurs numéros. Le jour J, présentez les originaux et la carte bancaire utilisée pour réserver, à votre nom.",
+    a: "À la réservation, une photo recto verso de votre carte d’identité (ou de la page photo de votre passeport) et de votre permis de conduire, avec leurs numéros. Le jour J, présentez les originaux.",
   },
   {
     q: "Comment se passe la signature du contrat ?",
@@ -42,7 +45,7 @@ const faq = [
   },
   {
     q: "Comment fonctionne la caution ?",
-    a: `Une empreinte bancaire de ${euros(car.deposit)} est réalisée sur votre carte juste avant la remise des clés. Rien n’est débité : le montant est bloqué, puis nous le libérons après l’état des lieux de retour. Prévoyez une carte dont le plafond couvre ce montant.`,
+    a: "Rien à verser à la réservation. Le jour J, à la remise des clés, vous activez une empreinte bancaire depuis votre téléphone (le montant est bloqué, jamais débité), ou vous remettez la caution en espèces contre reçu. Elle vous est rendue à la récupération du véhicule, après l’état des lieux. Son montant figure sur la fiche de chaque véhicule.",
   },
   {
     q: "Quelle est la différence entre les forfaits semaine et week-end ?",
@@ -64,7 +67,7 @@ export default function HomePage() {
       {/* ---------------------------- Hero ---------------------------- */}
       <section className="relative overflow-hidden bg-ink text-paper">
         <div className="relative mx-auto max-w-7xl px-4 pt-14 sm:px-8 lg:pt-20">
-          <div className="text-center">
+          <div className="pb-16 text-center lg:pb-24">
             <p className="eyebrow rise inline-flex items-center gap-2 text-accent-light">
               <PinIcon className="h-4 w-4" /> {site.tagline} · {site.city}
             </p>
@@ -72,74 +75,36 @@ export default function HomePage() {
               Conduisez <span className="text-accent-light italic">l’exception.</span>
             </h1>
             <p className="rise mx-auto mt-6 max-w-xl text-base/relaxed text-pretty text-muted-on-ink [animation-delay:120ms] sm:text-lg/relaxed">
-              {car.brand} {car.model} en {car.finish.toLowerCase()}, livrée à l’adresse de votre choix dans Paris. 400
-              chevaux, cinq cylindres, à vous le temps d’une journée ou d’un week-end.
+              Sportives et SUV de prestige, livrés à l’adresse de votre choix dans {site.city}. Réservation, contrat et
+              paiement en ligne, en quelques minutes.
             </p>
             <div className="rise [animation-delay:200ms]">
-              <QuickBooking vehicle={car} />
-              <Link href="#forfaits" className="mt-4 inline-block text-sm text-muted-on-ink underline-offset-4 hover:text-paper hover:underline">
-                Voir les forfaits
+              <QuickBooking />
+              <Link href="/vehicules" className="mt-4 inline-block text-sm text-muted-on-ink underline-offset-4 hover:text-paper hover:underline">
+                Parcourir la flotte
               </Link>
             </div>
-          </div>
-
-          <VehicleVisual vehicle={car} animated priority className="mx-auto mt-4 max-w-4xl" />
-
-          <div className="pb-4">
-            <VehicleHeadline vehicle={car} />
           </div>
         </div>
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" aria-hidden />
       </section>
 
-      {/* ---------------------------- Le modèle ---------------------------- */}
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-20">
-          <div>
-            <p className="eyebrow text-accent">Le modèle</p>
-            <h2 className="mt-3 font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">
-              {car.brand} {car.model} <span className="text-accent italic">{car.finish}.</span>
-            </h2>
-            <p className="mt-6 max-w-lg text-base/relaxed text-muted">
-              La compacte la plus radicale d’Audi Sport, dans une finition mate rare. Un cinq cylindres au son
-              inimitable, la transmission quattro et un châssis réglé pour la route comme pour le plaisir.
-            </p>
-            <Link
-              href="/vehicules"
-              className="mt-8 inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-            >
-              Fiche technique complète
-              <ArrowIcon className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <dl className="divide-y divide-line border-y border-line">
-            {car.specs.map((s) => (
-              <div key={s.label} className="flex items-baseline justify-between gap-6 py-4">
-                <dt className="eyebrow text-muted">{s.label}</dt>
-                <dd className="text-right font-medium">{s.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* ---------------------------- Forfaits ---------------------------- */}
-      <section id="forfaits" className="bg-ink text-paper">
+      {/* ---------------------------- La flotte ---------------------------- */}
+      <section id="flotte" className="bg-ink text-paper">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
-              <p className="eyebrow text-accent-light">Forfaits</p>
+              <p className="eyebrow text-accent-light">La flotte</p>
               <h2 className="mt-3 font-display text-3xl/[1.08] text-balance sm:text-4xl/[1.08]">
-                Un prix fixe, <span className="text-accent-light italic">tout compris.</span>
+                Choisissez <span className="text-accent-light italic">votre modèle.</span>
               </h2>
             </div>
             <p className="max-w-sm text-sm/relaxed text-muted-on-ink">
-              Caution de {euros(car.deposit)} par empreinte bancaire, levée après l’état des lieux de retour. Livraison incluse dans Paris.
+              Forfaits semaine et week-end à prix fixe, livraison incluse dans {site.city}. Dès {euros(fleetFromPrice)}.
             </p>
           </div>
           <div className="mt-12">
-            <PackageGrid vehicle={car} />
+            <FleetGrid vehicles={fleet} />
           </div>
         </div>
       </section>
@@ -193,7 +158,7 @@ export default function HomePage() {
       </section>
 
       {/* ---------------------------- FAQ + agence ---------------------------- */}
-      <section>
+      <section id="faq">
         <div className="mx-auto grid max-w-7xl gap-14 px-4 py-20 sm:px-8 lg:grid-cols-[1.4fr_1fr] lg:py-28">
           <div>
             <p className="eyebrow text-accent">Questions fréquentes</p>
@@ -233,7 +198,7 @@ export default function HomePage() {
                 href="/reserver"
                 className="inline-flex items-center justify-center gap-2 rounded-sm bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
               >
-                Réserver · dès {euros(fromPrice(car))}
+                Réserver · dès {euros(fleetFromPrice)}
                 <ArrowIcon className="h-4 w-4" />
               </Link>
               <a href={`tel:${site.contact.phone}`} className="inline-flex items-center justify-center rounded-sm border border-white/25 px-5 py-3 font-semibold hover:border-white">

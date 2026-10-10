@@ -54,14 +54,20 @@ export const site = {
 
   booking: {
     /**
-     * Caution par empreinte bancaire, prise sur le site et levée À LA MAIN
-     * par l'agence depuis le dashboard, après l'état des lieux de retour.
+     * Caution, au choix du locataire, versée À LA REMISE DES CLÉS et rendue
+     * à la récupération du véhicule :
+     * - "card" : le locataire active lui-même l'empreinte sur son téléphone
+     *   (QR code vers /caution), l'agence la lève depuis le dashboard ;
+     * - "cash" : espèces remises contre reçu.
      *
-     * Une autorisation bancaire expire au bout de 7 jours (30 au mieux avec
-     * l'autorisation étendue de Stripe pour les loueurs) : la carte est donc
-     * enregistrée à la réservation et l'empreinte réalisée juste avant la
-     * remise des clés, pas au moment du paiement.
+     * Rien n'est bloqué à la réservation : une autorisation bancaire expire
+     * au bout de 7 jours, ce qui couvre une location (7 jours max en ligne)
+     * mais pas l'attente entre la réservation et le départ.
      */
+    depositModes: [
+      { id: "card", label: "Empreinte bancaire", note: "Bloquée sur votre carte, jamais débitée" },
+      { id: "cash", label: "Espèces", note: "Remises contre reçu, rendues au retour" }, // TODO accord du client à confirmer
+    ],
     kmPerDay: 150, // TODO kilométrage inclus à confirmer
     extraKm: 1.5, // TODO à confirmer // €/km au-delà du forfait
     /** Copies des pièces : supprimées N mois après la restitution, hors litige. */

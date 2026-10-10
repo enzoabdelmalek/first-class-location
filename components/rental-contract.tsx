@@ -109,9 +109,9 @@ export function RentalContract({
 
         <Block title="Caution et franchise">
           <p>
-            Caution de <strong>{euros(price.deposit)}</strong> par empreinte bancaire sur la carte du locataire, réalisée
-            avant la remise des clés. Le montant est bloqué, non débité, et levé par le loueur après l’état des lieux de
-            retour, déduction faite des sommes dues au titre des conditions de location.
+            Caution de <strong>{euros(price.deposit)}</strong>, versée à la remise des clés par empreinte bancaire ou en
+            espèces contre reçu, et rendue à la récupération du véhicule après l’état des lieux de retour, déduction
+            faite des sommes dues au titre des conditions de location.
           </p>
           <p>
             Franchise en cas de sinistre : {vehicle.excess === null ? "à compléter" : euros(vehicle.excess)}

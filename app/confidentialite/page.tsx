@@ -26,9 +26,9 @@ const purposes = [
     retention: "5 ans après la fin de la location (prescription civile)",
   },
   {
-    purpose: "Paiement, empreinte de caution et prévention de la fraude",
+    purpose: "Paiement, caution et prévention de la fraude",
     basis: "Exécution du contrat · intérêt légitime",
-    retention: "Carte enregistrée chez Stripe jusqu’à la levée de la caution · données de transaction : 13 mois",
+    retention: "Données de transaction : 13 mois · reçus de caution en espèces : 10 ans (pièces comptables)",
   },
   {
     purpose: "Désignation du conducteur en cas d’infraction",

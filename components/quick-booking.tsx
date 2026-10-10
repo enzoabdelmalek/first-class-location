@@ -3,34 +3,44 @@
 import { useState } from "react";
 import { ArrowIcon } from "@/components/icons";
 import { isoDay } from "@/lib/dates";
-import { fromPrice, MAX_ONLINE_DAYS, tariff, tariffLabel, type Vehicle } from "@/lib/fleet";
+import { fleet, fleetFromPrice, MAX_ONLINE_DAYS, rentalDays, tariff } from "@/lib/fleet";
 import { useMounted } from "@/lib/use-mounted";
 import { euros } from "@/lib/utils";
 
 /**
- * Entrée du tunnel depuis le hero : deux dates, le prix tombe tout de suite,
- * et le bouton ouvre la réservation avec les dates déjà remplies. Sans
- * JavaScript, le formulaire envoie quand même vers /reserver.
+ * Entrée du tunnel depuis le hero : deux dates, le prix de départ de la
+ * flotte pour ces dates tombe tout de suite, et le bouton ouvre la
+ * réservation avec les dates remplies ; le choix du véhicule s'y fait avec
+ * les prix exacts. Sans JavaScript, le formulaire envoie quand même vers
+ * /reserver.
  */
-export function QuickBooking({ vehicle }: { vehicle: Vehicle }) {
+export function QuickBooking() {
   const mounted = useMounted();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
   // Mêmes heures par défaut que le tunnel : 10 h au départ comme au retour.
-  const rate = from && to ? tariff(vehicle, new Date(`${from}T10:00`), new Date(`${to}T10:00`)) : null;
+  const start = new Date(`${from}T10:00`);
+  const end = new Date(`${to}T10:00`);
+  const days = from && to ? rentalDays(start, end) : 0;
+  const prices = days > 0 && days <= MAX_ONLINE_DAYS
+    ? fleet.flatMap((v) => {
+        const t = tariff(v, start, end);
+        return t?.kind === "price" ? [t.price] : [];
+      })
+    : [];
+  const best = prices.length ? Math.min(...prices) : null;
   const tomorrow = mounted ? isoDay(1) : undefined;
 
   const cta =
-    rate?.kind === "price"
-      ? `Réserver · ${euros(rate.price)}`
-      : rate?.kind === "quote"
+    best !== null
+      ? `Voir les véhicules · dès ${euros(best)}`
+      : days > MAX_ONLINE_DAYS
         ? "Demander un devis"
-        : `Réserver · dès ${euros(fromPrice(vehicle))}`;
+        : `Réserver · dès ${euros(fleetFromPrice)}`;
 
   return (
     <form action="/reserver" className="mx-auto mt-8 grid max-w-3xl gap-px overflow-hidden rounded-sm border border-ink-line bg-ink-line text-left sm:grid-cols-[1fr_1fr_auto]">
-      <input type="hidden" name="vehicule" value={vehicle.slug} />
       <label className="block bg-ink-soft px-4 py-3">
         <span className="eyebrow block text-muted-on-ink">Départ</span>
         <input
@@ -64,9 +74,9 @@ export function QuickBooking({ vehicle }: { vehicle: Vehicle }) {
         <ArrowIcon className="h-4 w-4" />
       </button>
       <p aria-live="polite" className="bg-ink px-4 py-2 text-xs text-muted-on-ink sm:col-span-3">
-        {rate?.kind === "price"
-          ? `${rate.days} jour${rate.days > 1 ? "s" : ""} · forfait ${tariffLabel(rate)} · livraison incluse dans Paris`
-          : rate?.kind === "quote"
+        {best !== null
+          ? `${days} jour${days > 1 ? "s" : ""} · ${fleet.length} véhicules · livraison incluse dans Paris`
+          : days > MAX_ONLINE_DAYS
             ? `Au-delà de ${MAX_ONLINE_DAYS} jours, tarif sur mesure.`
             : "Choisissez vos dates : le prix s’affiche aussitôt. Livraison incluse dans Paris."}
       </p>

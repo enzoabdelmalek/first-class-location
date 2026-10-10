@@ -1,9 +1,12 @@
 /**
- * Véhicule et forfaits.
+ * Flotte et forfaits. Le site ne met en avant AUCUN véhicule en particulier :
+ * chaque entrée de `fleet` donne une carte dans les listes et sa propre page
+ * /vehicules/[slug]. Ajouter un véhicule = ajouter une entrée ici (puis, en
+ * production, une ligne en base gérée depuis le dashboard).
  *
  * Données client (04/10/2026) : une Audi RS3 Sportback gris mat, cinq
- * forfaits, caution de 6 000 €. Le modèle reste une liste pour accueillir
- * d'autres véhicules plus tard sans toucher aux pages.
+ * forfaits, caution de 6 000 €. Les autres véhicules sont des EXEMPLES
+ * (`placeholder: true`) pour montrer la grille ; à remplacer.
  *
  * Le client choisit librement ses dates ; le prix est déduit des forfaits
  * par `tariff()` (voir sa règle plus bas).
@@ -35,6 +38,8 @@ export type Vehicle = {
   finish: string;
   category: string;
   body: Body;
+  /** Accroche de la fiche, deux phrases. */
+  description: string;
   headline: { value: string; label: string }[];
   specs: { label: string; value: string }[];
   /** Immatriculation, reprise sur le contrat. */
@@ -46,6 +51,8 @@ export type Vehicle = {
   minLicenseYears: number;
   packages: Package[];
   image?: string;
+  /** Véhicule d'exemple de la maquette : badge « Exemple » sur la carte. */
+  placeholder?: boolean;
 };
 
 export const fleet: Vehicle[] = [
@@ -56,6 +63,8 @@ export const fleet: Vehicle[] = [
     finish: "Gris mat",
     category: "Compacte sportive",
     body: "compacte",
+    description:
+      "La compacte la plus radicale d’Audi Sport, dans une finition mate rare. Un cinq cylindres au son inimitable, la transmission quattro et un châssis réglé pour la route comme pour le plaisir.",
     headline: [
       { value: "400", label: "ch" },
       { value: "3,8 s", label: "de 0 à 100 km/h" },
@@ -119,16 +128,92 @@ export const fleet: Vehicle[] = [
       },
     ],
   },
+  {
+    // EXEMPLE de maquette, à remplacer par un véhicule réel du client.
+    slug: "bmw-m4-competition",
+    brand: "BMW",
+    model: "M4 Competition",
+    finish: "Noir saphir",
+    category: "Coupé sportif",
+    body: "berline",
+    description:
+      "Un six cylindres biturbo de 510 chevaux dans un coupé quatre places. Une sportive de caractère qui reste utilisable au quotidien.",
+    headline: [
+      { value: "510", label: "ch" },
+      { value: "3,9 s", label: "de 0 à 100 km/h" },
+      { value: "650", label: "Nm de couple" },
+      { value: "6", label: "cylindres" },
+    ],
+    specs: [
+      { label: "Moteur", value: "3.0 biturbo, 6 cylindres en ligne" },
+      { label: "Puissance", value: "510 ch" },
+      { label: "Couple", value: "650 Nm" },
+      { label: "0 à 100 km/h", value: "3,9 s" },
+      { label: "Transmission", value: "Propulsion, M Steptronic 8 rapports" },
+      { label: "Places", value: "4" },
+    ],
+    plate: "À compléter",
+    deposit: 8000,
+    excess: null,
+    minAge: 25,
+    minLicenseYears: 5,
+    packages: [
+      { id: "24h-semaine", label: "24 h", period: "Semaine", days: 1, price: 450, rule: "Une journée en semaine." },
+      { id: "48h-semaine", label: "48 h", period: "Semaine", days: 2, price: 850, rule: "Deux jours en semaine." },
+      { id: "48h-weekend", label: "48 h", period: "Week-end", days: 2, price: 1300, rule: "Le week-end, 48 h au volant." },
+    ],
+    placeholder: true,
+  },
+  {
+    // EXEMPLE de maquette, à remplacer par un véhicule réel du client.
+    slug: "range-rover-sport",
+    brand: "Range Rover",
+    model: "Sport P400",
+    finish: "Blanc Fuji",
+    category: "SUV de luxe",
+    body: "suv",
+    description:
+      "Le SUV de prestige par excellence : cinq places, un confort de limousine et 400 chevaux pour les longs trajets comme pour Paris.",
+    headline: [
+      { value: "400", label: "ch" },
+      { value: "5,9 s", label: "de 0 à 100 km/h" },
+      { value: "550", label: "Nm de couple" },
+      { value: "5", label: "places" },
+    ],
+    specs: [
+      { label: "Moteur", value: "3.0 hybride léger, 6 cylindres" },
+      { label: "Puissance", value: "400 ch" },
+      { label: "Couple", value: "550 Nm" },
+      { label: "0 à 100 km/h", value: "5,9 s" },
+      { label: "Transmission", value: "Intégrale, automatique 8 rapports" },
+      { label: "Places", value: "5" },
+    ],
+    plate: "À compléter",
+    deposit: 6000,
+    excess: null,
+    minAge: 23,
+    minLicenseYears: 3,
+    packages: [
+      { id: "24h-semaine", label: "24 h", period: "Semaine", days: 1, price: 390, rule: "Une journée en semaine." },
+      { id: "48h-semaine", label: "48 h", period: "Semaine", days: 2, price: 720, rule: "Deux jours en semaine." },
+      { id: "48h-weekend", label: "48 h", period: "Week-end", days: 2, price: 1100, rule: "Le week-end, 48 h au volant." },
+    ],
+    placeholder: true,
+  },
 ];
-
-export const flagship = fleet[0];
 
 export function vehicleBySlug(slug: string | undefined) {
   return fleet.find((v) => v.slug === slug);
 }
 
-/** Prix le plus bas, pour les accroches « dès … ». */
+/** Prix le plus bas d'un véhicule, pour les accroches « dès … ». */
 export const fromPrice = (vehicle: Vehicle) => Math.min(...vehicle.packages.map((p) => p.price));
+
+/** Le moins cher de toute la flotte, pour les accroches générales. */
+export const fleetFromPrice = Math.min(...fleet.map(fromPrice));
+
+/** Âge minimum le plus bas de la flotte : « dès 21 ans ». */
+export const fleetMinAge = Math.min(...fleet.map((v) => v.minAge));
 
 /* ----------------------------- Options ----------------------------- */
 

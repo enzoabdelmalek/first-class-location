@@ -7,10 +7,10 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/vehicules", label: "Le véhicule" },
-  { href: "/#forfaits", label: "Forfaits" },
+  { href: "/vehicules", label: "Nos véhicules" },
   { href: "/#fonctionnement", label: "Comment ça marche" },
-  { href: "/#agence", label: "L'agence" },
+  { href: "/#agence", label: "Livraison" },
+  { href: "/#faq", label: "Questions" },
 ];
 
 export function SiteHeader() {

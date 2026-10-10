@@ -3,7 +3,7 @@ import { Booking, type BookingInitial } from "@/components/booking";
 
 export const metadata: Metadata = {
   title: "Réserver",
-  description: "Réservez l’Audi RS3 Sportback gris mat en ligne : vos dates, vos options et un paiement sécurisé.",
+  description: "Réservez votre voiture de luxe en ligne : vos dates, votre véhicule, votre contrat signé et un paiement sécurisé.",
 };
 
 export default async function ReservePage({ searchParams }: PageProps<"/reserver">) {

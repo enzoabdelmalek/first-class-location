@@ -10,10 +10,13 @@ import { SignaturePad } from "@/components/signature-pad";
 import { isoDay, timeSlots } from "@/lib/dates";
 import {
   extras,
-  flagship,
+  fleet,
+  fleetMinAge,
+  fromPrice,
   GRACE_MINUTES,
   MAX_ONLINE_DAYS,
   quote,
+  rentalDays,
   tariff,
   tariffLabel,
   vehicleBySlug,
@@ -35,9 +38,10 @@ import { cn, euros } from "@/lib/utils";
  *   clé publique (voir `document-upload.tsx`) ;
  * - signature : PDF du contrat + empreinte SHA-256 + journal de preuve
  *   (horodatage, IP, code reçu par e-mail) ;
- * - paiement : Stripe Payment Element, carte enregistrée pour la caution ;
- * - caution : autorisation sans capture créée juste avant la remise des
- *   clés, levée ou encaissée par l'agence depuis le dashboard ;
+ * - paiement : Stripe Payment Element ;
+ * - caution : rien à la réservation, seulement le mode choisi. À la remise
+ *   des clés, empreinte activée par le locataire (/caution) ou espèces ;
+ *   rendue par l'agence depuis le dashboard à la récupération ;
  * - disponibilités du véhicule vérifiées côté serveur.
  */
 
@@ -86,6 +90,8 @@ type Signing = { read: boolean; signature: string; codeSent: boolean; code: stri
 
 type Card = { name: string; number: string; expiry: string; cvc: string };
 
+type DepositMode = (typeof site.booking.depositModes)[number]["id"];
+
 const emptyDriver: Driver = {
   firstName: "",
   lastName: "",
@@ -122,7 +128,9 @@ const shortDate = (d: Date) =>
 const maskEmail = (email: string) => email.replace(/^(.)[^@]*/, (_, first: string) => `${first}•••`);
 
 export function Booking({ initial }: { initial: BookingInitial }) {
-  const vehicle: Vehicle = vehicleBySlug(initial.vehicule) ?? flagship;
+  // Véhicule venu d'une fiche, ou d'office s'il n'y en a qu'un ; sinon, choisi à la première étape.
+  const [slug, setSlug] = useState(vehicleBySlug(initial.vehicule)?.slug ?? (fleet.length === 1 ? fleet[0].slug : ""));
+  const vehicle = vehicleBySlug(slug);
 
   const [step, setStep] = useState(0);
   const [trip, setTrip] = useState({ from: isDate(initial.du), fromTime: "10:00", to: isDate(initial.au), toTime: "10:00" });
@@ -135,7 +143,8 @@ export function Booking({ initial }: { initial: BookingInitial }) {
   const [papers, setPapers] = useState<Papers>(emptyPapers);
   const [signing, setSigning] = useState<Signing>({ read: false, signature: "", codeSent: false, code: "" });
   const [card, setCard] = useState<Card>({ name: "", number: "", expiry: "", cvc: "" });
-  const [accepted, setAccepted] = useState({ cgv: false, deposit: false });
+  const [depositMode, setDepositMode] = useState<DepositMode>("card");
+  const [accepted, setAccepted] = useState({ cgv: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "paying" | "done">("idle");
   const [code, setCode] = useState("");
@@ -146,14 +155,15 @@ export function Booking({ initial }: { initial: BookingInitial }) {
 
   const start = trip.from ? new Date(`${trip.from}T${trip.fromTime}`) : null;
   const end = trip.to ? new Date(`${trip.to}T${trip.toTime}`) : null;
-  const rate: Tariff | null = start && end ? tariff(vehicle, start, end) : null;
+  const days = start && end ? rentalDays(start, end) : 0;
+  const rate: Tariff | null = vehicle && start && end ? tariff(vehicle, start, end) : null;
   const priced = rate?.kind === "price" ? rate : null;
 
   const place = site.locations.find((l) => l.id === location) ?? site.locations[0];
   const handoverLabel = location === "gare" ? "Gare ou aéroport, n° de train ou de vol" : "Adresse de livraison";
   const handoverPlace = handover.trim() ? `${place.label} · ${handover.trim()}` : place.label;
   const price = priced
-    ? quote({ vehicle, base: priced.price, days: priced.days, extraIds, locationFee: place.fee })
+    ? quote({ vehicle: vehicle!, base: priced.price, days: priced.days, extraIds, locationFee: place.fee })
     : null;
 
   const current: StepName = STEPS[step];
@@ -180,18 +190,19 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       if (!trip.from) e.from = "Choisissez une date de début.";
       else if (trip.from <= today) e.from = "Le départ doit être au plus tôt demain.";
       if (!trip.to) e.to = "Choisissez une date de fin.";
-      else if (rate === null) e.to = "La fin doit suivre le début.";
-      else if (rate.kind === "quote") e.to = `Au-delà de ${MAX_ONLINE_DAYS} jours, contactez-nous pour un devis.`;
+      else if (days <= 0) e.to = "La fin doit suivre le début.";
+      else if (days > MAX_ONLINE_DAYS) e.to = `Au-delà de ${MAX_ONLINE_DAYS} jours, contactez-nous pour un devis.`;
+      if (!vehicle) e.vehicle = "Choisissez un véhicule.";
       if (!handover.trim()) e.handover = "Indiquez où vous remettre les clés.";
     }
-    if (name === "Conducteur" && start) {
+    if (name === "Conducteur" && start && vehicle) {
       const required: (keyof Driver)[] = ["firstName", "lastName", "email", "phone", "birthDate", "birthPlace", "street", "postalCode", "city"];
       for (const k of required) if (!driver[k].trim()) e[k] = "Champ requis.";
       if (driver.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driver.email)) e.email = "Adresse e-mail invalide.";
       if (driver.birthDate && yearsBetween(driver.birthDate, start) < vehicle.minAge)
         e.birthDate = `Vous devez avoir ${vehicle.minAge} ans révolus au départ de la location.`;
     }
-    if (name === "Documents" && start && end) {
+    if (name === "Documents" && start && end && vehicle) {
       if (!/^[A-Z0-9]{6,12}$/i.test(papers.idNumber.replace(/\s/g, ""))) e.idNumber = "Numéro incomplet : recopiez-le tel qu’il figure sur la pièce.";
       if (!papers.idExpiry) e.idExpiry = "Champ requis.";
       else if (new Date(papers.idExpiry) < end) e.idExpiry = "La pièce doit être valide jusqu’à la fin de la location.";
@@ -216,7 +227,6 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       if (card.number.replace(/\s/g, "").length < 15) e.cardNumber = "Numéro de carte incomplet.";
       if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry)) e.expiry = "Format MM/AA.";
       if (!/^\d{3,4}$/.test(card.cvc)) e.cvc = "3 ou 4 chiffres.";
-      if (!accepted.deposit) e.deposit = "Vous devez autoriser l’empreinte de caution.";
       if (!accepted.cgv) e.cgv = "Vous devez accepter les conditions.";
     }
     setErrors(e);
@@ -238,7 +248,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
     }, 1400);
   }
 
-  if (status === "done" && priced && price && start && end) {
+  if (status === "done" && vehicle && priced && price && start && end) {
     return (
       <Confirmation
         code={code}
@@ -250,6 +260,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
         location={handoverPlace}
         total={price.total}
         deposit={price.deposit}
+        depositMode={depositMode}
       />
     );
   }
@@ -284,7 +295,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
           {current === "Location" && (
             <Panel
               title="Votre location"
-              text={`${vehicle.brand} ${vehicle.model} ${vehicle.finish.toLowerCase()}. Choisissez librement le début et la fin : le forfait correspondant s’applique automatiquement.`}
+              text="Vos dates, puis votre véhicule : le forfait correspondant s’applique automatiquement, prix affiché aussitôt."
             >
               <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
                 <Field label="Début de la location" error={errors.from}>
@@ -323,32 +334,57 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 </Field>
               </div>
 
-              {rate ? (
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-l-2 border-accent bg-paper-alt px-5 py-4">
-                  {rate.kind === "price" ? (
-                    <>
-                      <p className="text-sm">
-                        <span className="text-muted">
-                          {rate.days} jour{rate.days > 1 ? "s" : ""} · forfait{" "}
-                        </span>
-                        <strong className="font-semibold">{tariffLabel(rate)}</strong>
-                      </p>
-                      <p className="font-display text-2xl">{euros(rate.price)}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm">
-                      Au-delà de {MAX_ONLINE_DAYS} jours, nous établissons un tarif sur mesure :{" "}
-                      <a href={`tel:${site.contact.phone}`} className="font-semibold underline underline-offset-4">
-                        {site.contact.phoneDisplay}
-                      </a>
-                      .
-                    </p>
-                  )}
-                </div>
+              {days > MAX_ONLINE_DAYS ? (
+                <p className="mt-6 border-l-2 border-accent bg-paper-alt px-5 py-4 text-sm">
+                  Au-delà de {MAX_ONLINE_DAYS} jours, nous établissons un tarif sur mesure :{" "}
+                  <a href={`tel:${site.contact.phone}`} className="font-semibold underline underline-offset-4">
+                    {site.contact.phoneDisplay}
+                  </a>
+                  .
+                </p>
               ) : null}
               <p className="mt-3 text-xs text-muted">
                 Une tolérance de {GRACE_MINUTES} minutes s’applique au retour : au-delà, une journée supplémentaire est due.
               </p>
+
+              <fieldset className="mt-10">
+                <legend className="mb-3 text-sm font-semibold">Véhicule</legend>
+                <div className="grid gap-3">
+                  {fleet.map((v) => {
+                    const t = start && end ? tariff(v, start, end) : null;
+                    return (
+                      <Choice key={v.slug} name="vehicle" checked={slug === v.slug} onChange={() => setSlug(v.slug)}>
+                        <span className="flex items-center gap-4">
+                          <CarSilhouette body={v.body} className="w-20 shrink-0 text-muted sm:w-24" strokeWidth={1.6} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold">
+                              {v.brand} {v.model}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-muted">
+                              {v.finish} · dès {v.minAge} ans · caution {euros(v.deposit)}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            {t?.kind === "price" ? (
+                              <>
+                                <span className="block font-display text-lg leading-none">{euros(t.price)}</span>
+                                <span className="mt-1 block text-xs text-muted">{tariffLabel(t)}</span>
+                              </>
+                            ) : (
+                              <span className="block text-sm text-muted">dès {euros(fromPrice(v))}</span>
+                            )}
+                          </span>
+                        </span>
+                      </Choice>
+                    );
+                  })}
+                </div>
+                {errors.vehicle ? (
+                  <p data-error className="mt-2 text-sm text-accent">
+                    {errors.vehicle}
+                  </p>
+                ) : null}
+              </fieldset>
 
               <fieldset className="mt-10">
                 <legend className="mb-3 text-sm font-semibold">Remise des clés</legend>
@@ -423,7 +459,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
           {current === "Conducteur" && (
             <Panel
               title="Conducteur principal"
-              text={`Accessible dès ${vehicle.minAge} ans révolus au jour du départ. Ces informations figurent sur votre contrat de location.`}
+              text={`Accessible dès ${vehicle?.minAge ?? fleetMinAge} ans révolus au jour du départ. Ces informations figurent sur votre contrat de location.`}
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 {driverField("firstName", "Prénom", { autoComplete: "given-name" })}
@@ -543,7 +579,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             </Panel>
           )}
 
-          {current === "Contrat" && priced && price && start && end && (
+          {current === "Contrat" && vehicle && priced && price && start && end && (
             <Panel
               title="Votre contrat"
               text="Relisez votre contrat de location, signez-le, puis confirmez avec le code reçu par e-mail. Il ne prend effet qu’au paiement."
@@ -679,23 +715,26 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 </div>
               </div>
 
-              <div className="mt-5 border-l-2 border-accent bg-paper-alt p-5 sm:p-6">
-                <p className="eyebrow text-accent">Caution · {euros(price.deposit)}</p>
-                <p className="mt-2 text-sm/relaxed text-muted">
-                  Cette carte est enregistrée pour la caution. Une <strong className="text-ink">empreinte bancaire</strong> de{" "}
-                  {euros(price.deposit)} y est réalisée juste avant la remise des clés : le montant est bloqué,{" "}
-                  <strong className="text-ink">jamais débité</strong> si le véhicule revient en bon état, puis levé par
-                  l’agence après l’état des lieux de retour.
+              <fieldset className="mt-8">
+                <legend className="mb-1 text-sm font-semibold">Caution · {euros(price.deposit)}</legend>
+                <p className="mb-3 text-sm/relaxed text-muted">
+                  Rien à payer maintenant : la caution se verse à la remise des clés, et vous est rendue à la récupération du
+                  véhicule.
                 </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {site.booking.depositModes.map((m) => (
+                    <Choice key={m.id} name="depositMode" checked={depositMode === m.id} onChange={() => setDepositMode(m.id)}>
+                      <span className="block text-sm font-semibold">{m.label}</span>
+                      <span className="mt-1 block text-sm text-muted">{m.note}</span>
+                    </Choice>
+                  ))}
+                </div>
                 <p className="mt-3 text-xs/relaxed text-muted">
-                  La carte doit être au nom du conducteur, et son plafond couvrir {euros(price.deposit)}. Les cartes
-                  prépayées et à autorisation systématique ne sont pas acceptées pour la caution.
+                  {depositMode === "card"
+                    ? `Le jour J, vous activez l’empreinte depuis votre téléphone en scannant le QR code présenté par notre chauffeur. Carte au nom du conducteur, plafond d’au moins ${euros(price.deposit)} ; cartes prépayées non acceptées.`
+                    : `Prévoyez ${euros(price.deposit)} en espèces le jour J. Un reçu signé vous est remis, et la somme vous est rendue à la récupération du véhicule.`}
                 </p>
-                <Check checked={accepted.deposit} onChange={(v) => setAccepted({ ...accepted, deposit: v })} error={errors.deposit}>
-                  J’autorise {site.name} à réaliser une empreinte de {euros(price.deposit)} sur cette carte avant la remise des
-                  clés, et à prélever, sur justificatif, les sommes dues au titre du contrat.
-                </Check>
-              </div>
+              </fieldset>
 
               <Check checked={accepted.cgv} onChange={(v) => setAccepted({ ...accepted, cgv: v })} error={errors.cgv}>
                 J’ai lu et j’accepte les{" "}
@@ -751,7 +790,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
           <p className="eyebrow text-muted-on-ink">
             Étape {step + 1}/{STEPS.length}
           </p>
-          <p className="truncate font-display text-xl leading-tight">{price ? euros(price.total) : "Vos dates"}</p>
+          <p className="truncate font-display text-xl leading-tight">{price ? euros(price.total) : !start || !end ? "Vos dates" : "Votre véhicule"}</p>
         </div>
         <button
           type="submit"
@@ -858,7 +897,7 @@ function Summary({
   location,
   price,
 }: {
-  vehicle: Vehicle;
+  vehicle?: Vehicle;
   label?: string;
   start: Date | null;
   end: Date | null;
@@ -877,11 +916,19 @@ function Summary({
       </div>
 
       <div className="px-6 pt-6">
-        <CarSilhouette body={vehicle.body} className="w-full text-[#b8bcc2]" strokeWidth={1.4} />
-        <p className="mt-4 font-display text-lg leading-snug">
-          {vehicle.brand} <span className="text-accent-light italic">{vehicle.model}</span>
-        </p>
-        <p className="text-sm text-muted-on-ink">{vehicle.finish}</p>
+        {vehicle ? (
+          <>
+            <CarSilhouette body={vehicle.body} className="w-full text-[#b8bcc2]" strokeWidth={1.4} />
+            <p className="mt-4 font-display text-lg leading-snug">
+              {vehicle.brand} <span className="text-accent-light italic">{vehicle.model}</span>
+            </p>
+            <p className="text-sm text-muted-on-ink">{vehicle.finish}</p>
+          </>
+        ) : (
+          <p className="border border-dashed border-ink-line px-4 py-8 text-center text-sm text-muted-on-ink">
+            Choisissez un véhicule
+          </p>
+        )}
       </div>
 
       <div className="mx-6 mt-6 grid grid-cols-[1fr_auto_1fr] items-end gap-3 border-t border-ink-line pt-5">
@@ -920,11 +967,11 @@ function Summary({
               <p className="font-display text-3xl leading-none">{euros(price.total)}</p>
             </div>
             <p className="mt-3 text-xs text-muted-on-ink">
-              + caution {euros(price.deposit)}, par empreinte bancaire non débitée
+              + caution {euros(price.deposit)}, versée à la remise des clés
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted-on-ink">Le prix s’affiche dès que vos dates sont choisies.</p>
+          <p className="text-sm text-muted-on-ink">Le prix s’affiche dès que vos dates et votre véhicule sont choisis.</p>
         )}
       </div>
     </div>
@@ -950,6 +997,7 @@ function Confirmation({
   location,
   total,
   deposit,
+  depositMode,
 }: {
   code: string;
   driver: Driver;
@@ -960,15 +1008,25 @@ function Confirmation({
   location: string;
   total: number;
   deposit: number;
+  depositMode: DepositMode;
 }) {
   const full = (d: Date) =>
     d.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
   const next = [
     ["Vérification de vos pièces", "Sous 24 h. Nous vous écrivons seulement s’il manque quelque chose."],
-    ["Empreinte de caution", `${euros(deposit)} bloqués sur votre carte juste avant le départ, sans débit.`],
-    ["Remise des clés", "Munissez-vous des originaux de vos pièces et de votre carte. État des lieux signé ensemble."],
-    ["Restitution", "Après l’état des lieux de retour, l’agence lève votre empreinte."],
+    [
+      "Remise des clés",
+      depositMode === "card"
+        ? `Munissez-vous des originaux de vos pièces et de votre carte : vous activez l’empreinte de ${euros(deposit)} en scannant un QR code, puis nous signons ensemble l’état des lieux.`
+        : `Munissez-vous des originaux de vos pièces et de ${euros(deposit)} en espèces, remis contre reçu. Puis nous signons ensemble l’état des lieux.`,
+    ],
+    [
+      "Récupération du véhicule",
+      depositMode === "card"
+        ? "Après l’état des lieux de retour, nous levons votre empreinte sur place."
+        : "Après l’état des lieux de retour, nous vous rendons votre caution sur place.",
+    ],
   ];
 
   return (
@@ -1011,7 +1069,9 @@ function Confirmation({
           <div className="text-right">
             <p className="text-sm text-muted-on-ink">Payé</p>
             <p className="font-display text-4xl">{euros(total)}</p>
-            <p className="text-xs text-muted-on-ink">Caution {euros(deposit)} non débitée</p>
+            <p className="text-xs text-muted-on-ink">
+              Caution {euros(deposit)} {depositMode === "card" ? "par empreinte" : "en espèces"}, à la remise des clés
+            </p>
           </div>
         </div>
       </div>

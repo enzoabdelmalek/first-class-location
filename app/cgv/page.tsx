@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalLayout, LegalSection } from "@/components/legal-layout";
-import { flagship, MAX_ONLINE_DAYS } from "@/lib/fleet";
+import { MAX_ONLINE_DAYS } from "@/lib/fleet";
 import { site } from "@/lib/site";
-import { euros } from "@/lib/utils";
 
 /**
  * Conditions générales de vente : la vente en ligne de la prestation
@@ -47,11 +46,11 @@ export default function CgvPage() {
       <LegalSection title="3. Réservation">
         <p>La réservation se fait en cinq étapes :</p>
         <ul>
-          <li>choix des dates, du lieu de remise des clés et des options ;</li>
+          <li>choix des dates, du véhicule, du lieu de remise des clés et des options ;</li>
           <li>informations sur le conducteur principal ;</li>
           <li>dépôt des copies de la pièce d’identité et du permis de conduire, avec leurs numéros ;</li>
           <li>relecture et signature électronique du contrat de location ;</li>
-          <li>paiement et autorisation de l’empreinte de caution.</li>
+          <li>paiement, et choix du mode de versement de la caution.</li>
         </ul>
         <p>
           Un récapitulatif est affiché à chaque étape, et le client peut corriger ses informations avant de payer. La
@@ -80,16 +79,16 @@ export default function CgvPage() {
       <LegalSection title="6. Paiement">
         <p>
           Le paiement s’effectue en ligne par carte bancaire, via notre prestataire Stripe, certifié PCI-DSS. Les
-          données de carte ne transitent pas par nos serveurs et ne nous sont jamais communiquées. La carte est
-          enregistrée chez Stripe pour la caution.
+          données de carte ne transitent pas par nos serveurs et ne nous sont jamais communiquées.
         </p>
       </LegalSection>
 
       <LegalSection title="7. Caution">
         <p>
-          Une caution de {euros(flagship.deposit)} est garantie par une empreinte bancaire réalisée sur la carte du client
-          juste avant la remise des clés. Elle n’est pas débitée et est levée par le loueur après l’état des lieux de
-          retour, dans les conditions prévues par les <Link href="/conditions-de-location">conditions de location</Link>.
+          Aucune caution n’est demandée à la réservation. Son montant, propre à chaque véhicule, figure sur sa fiche et
+          au contrat. Elle est versée à la remise des clés, au choix du client, par empreinte bancaire activée depuis son
+          téléphone ou en espèces contre reçu, et lui est rendue à la récupération du véhicule, dans les conditions
+          prévues par les <Link href="/conditions-de-location">conditions de location</Link>.
         </p>
       </LegalSection>
 

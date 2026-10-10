@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalLayout, LegalSection } from "@/components/legal-layout";
-import { extras, flagship, GRACE_MINUTES } from "@/lib/fleet";
+import { extras, fleetMinAge, GRACE_MINUTES } from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { euros } from "@/lib/utils";
 
@@ -24,7 +24,6 @@ const serenite = extras.find((e) => e.id === "serenite")!;
 
 export default function ConditionsDeLocationPage() {
   const { booking } = site;
-  const car = flagship;
   return (
     <LegalLayout
       title="Conditions de location"
@@ -43,15 +42,12 @@ export default function ConditionsDeLocationPage() {
       <LegalSection title="2. Conducteur">
         <ul>
           <li>
-            Être âgé d’au moins <strong>{car.minAge} ans révolus</strong> au jour du départ.
-          </li>
-          <li>
-            Être titulaire d’un permis B en cours de validité depuis au moins <strong>{car.minLicenseYears} ans</strong>.
+            Avoir l’âge minimum et l’ancienneté de permis B indiqués sur la fiche du véhicule et au contrat, soit au
+            moins <strong>{fleetMinAge} ans révolus</strong> au jour du départ, avec un permis en cours de validité.
           </li>
           <li>
             Avoir transmis à la réservation une copie de sa pièce d’identité (carte d’identité recto verso ou passeport) et
-            de son permis de conduire recto verso, et présenter les <strong>originaux</strong> à la remise des clés,
-            ainsi que la carte bancaire ayant servi à la réservation, à son nom.
+            de son permis de conduire recto verso, et présenter les <strong>originaux</strong> à la remise des clés.
           </li>
         </ul>
         <p>
@@ -100,24 +96,34 @@ export default function ConditionsDeLocationPage() {
 
       <LegalSection title="7. Caution">
         <p>
-          Une caution de <strong>{euros(car.deposit)}</strong> est garantie par une empreinte bancaire sur la carte du
-          locataire, réalisée juste avant la remise des clés. Le montant est bloqué, non débité. Après l’état des lieux
-          de retour, le loueur lève l’empreinte, ou n’en prélève que les sommes dues et justifiées : dommages dans la
-          limite de la franchise, carburant, kilomètres supplémentaires, nettoyage exceptionnel, frais liés aux
-          infractions. Le détail est communiqué au locataire avant tout prélèvement.
+          Le montant de la caution, propre à chaque véhicule, figure sur sa fiche et au contrat. Elle est versée à la
+          remise des clés, au choix du locataire :
+        </p>
+        <ul>
+          <li>
+            par <strong>empreinte bancaire</strong>, activée par le locataire depuis son téléphone sur une carte à son
+            nom : le montant est bloqué, non débité ;
+          </li>
+          <li>
+            en <strong>espèces</strong>, contre un reçu signé des deux parties.
+          </li>
+        </ul>
+        <p>
+          À la récupération du véhicule, après l’état des lieux de retour, le loueur lève l’empreinte ou rend les
+          espèces, déduction faite des seules sommes dues et justifiées : dommages dans la limite de la franchise,
+          carburant, kilomètres supplémentaires, nettoyage exceptionnel. Le détail est remis au locataire.
         </p>
         <p>
-          Si l’empreinte ne peut être réalisée (plafond insuffisant, carte refusée), le loueur peut refuser la remise
-          des clés.
+          Si la caution ne peut être versée (plafond insuffisant, carte refusée, somme incomplète), le loueur peut
+          refuser la remise des clés.
         </p>
       </LegalSection>
 
       <LegalSection title="8. Assurance, sinistre et franchise">
         <p>
           Le véhicule est assuré auprès de {site.legal.insurer} : responsabilité civile, dommages, vol et incendie. En
-          cas de sinistre responsable ou sans tiers identifié, une franchise de{" "}
-          <strong>{car.excess === null ? "[à compléter]" : euros(car.excess)}</strong> reste à la charge du locataire,
-          réduite avec l’option « {serenite.label} ».
+          cas de sinistre responsable ou sans tiers identifié, une franchise, indiquée au contrat pour chaque véhicule,
+          reste à la charge du locataire, réduite avec l’option « {serenite.label} ».
         </p>
         <p>
           Tout accident, vol ou dommage doit être signalé au loueur sans délai, et au plus tard sous 24 heures. En cas
