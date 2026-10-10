@@ -23,10 +23,18 @@ export const site = {
   url: "https://www.firstclass-location.fr", // TODO domaine définitif
 
   contact: {
-    phone: "+33600000000", // TODO
-    phoneDisplay: "06 00 00 00 00", // TODO
+    // Repris de la carte de visite du client (photos du 10/10/2026).
+    phone: "+33766320278",
+    phoneDisplay: "07 66 32 02 78",
     email: "contact@firstclass-location.fr", // TODO
   },
+
+  /** Comptes « firstclass.loc », repris de la carte de visite du client. */
+  socials: [
+    { label: "Instagram", url: "https://www.instagram.com/firstclass.loc/" },
+    { label: "TikTok", url: "https://www.tiktok.com/@firstclass.loc" },
+    { label: "Snapchat", url: "https://www.snapchat.com/add/firstclass.loc" },
+  ],
 
   /** Siège déclaré au RNE : pages légales et contrat UNIQUEMENT, jamais en vitrine. */
   address: {

@@ -50,7 +50,10 @@ export type Vehicle = {
   minAge: number;
   minLicenseYears: number;
   packages: Package[];
+  /** Photo large (16:9) : cartes et haut de la fiche. Sans photo, silhouette au trait. */
   image?: string;
+  /** Galerie de la fiche, photos en portrait. */
+  gallery?: { src: string; alt: string }[];
   /** Véhicule d'exemple de la maquette : badge « Exemple » sur la carte. */
   placeholder?: boolean;
 };
@@ -80,6 +83,22 @@ export const fleet: Vehicle[] = [
       { label: "Teinte", value: "Gris mat, teinte exclusive Audi" },
       { label: "Places", value: "5" },
     ],
+    image: "/vehicules/audi-rs3-sportback/cover.jpg",
+    gallery: [
+      ["arriere-detail", "Poupe, monogramme RS 3 et diffuseur"],
+      ["face-avant", "Face avant et calandre nid d’abeille"],
+      ["trois-quarts-avant", "Trois quarts avant, gris mat"],
+      ["jante", "Jante et étrier rouge"],
+      ["trois-quarts-arriere", "Trois quarts arrière"],
+      ["volant", "Volant en Alcantara, point milieu rouge"],
+      ["sieges-baquets", "Sièges baquets RS, surpiqûres rouges"],
+      ["poste-de-conduite", "Poste de conduite et Virtual Cockpit"],
+      ["habitacle", "Habitacle vu depuis la portière"],
+      ["planche-de-bord", "Détail de la planche de bord"],
+      ["siege", "Siège RS, motif nid d’abeille"],
+      ["arriere", "Arrière et becquet"],
+      ["portiere", "Portière ouverte sur le poste de conduite"],
+    ].map(([file, alt]) => ({ src: `/vehicules/audi-rs3-sportback/${file}.jpg`, alt })),
     plate: "À compléter", // TODO immatriculation
     deposit: 6000,
     excess: null, // TODO montant de la franchise (contrat d'assurance)

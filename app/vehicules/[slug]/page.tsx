@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowIcon } from "@/components/icons";
 import { FleetGrid, PackageGrid, VehicleHeadline, VehicleVisual } from "@/components/vehicle";
+import { VehicleGallery } from "@/components/vehicle-gallery";
 import { fleet, fromPrice, vehicleBySlug } from "@/lib/fleet";
 import { site } from "@/lib/site";
 import { euros } from "@/lib/utils";
@@ -64,7 +65,11 @@ export default async function VehiclePage({ params }: PageProps<"/vehicules/[slu
           </Link>
         </div>
 
-        <VehicleVisual vehicle={car} animated priority className="mx-auto mt-6 max-w-4xl" />
+        {car.image ? (
+          <VehicleVisual vehicle={car} priority ratio="aspect-[4/3] sm:aspect-[16/9]" sizes="(min-width: 1280px) 1216px, 100vw" className="mt-8" />
+        ) : (
+          <VehicleVisual vehicle={car} animated priority className="mx-auto mt-6 max-w-4xl" />
+        )}
         <VehicleHeadline vehicle={car} />
       </div>
 
@@ -110,6 +115,16 @@ export default async function VehiclePage({ params }: PageProps<"/vehicules/[slu
           </div>
         </div>
       </div>
+
+      {car.gallery?.length ? (
+        <div className="mx-auto max-w-7xl px-4 pt-20 sm:px-8 lg:pt-24">
+          <p className="eyebrow text-accent-light">Galerie</p>
+          <h2 className="mt-3 mb-10 font-display text-3xl/[1.08] sm:text-4xl/[1.08]">
+            Sous <span className="text-accent-light italic">tous les angles.</span>
+          </h2>
+          <VehicleGallery photos={car.gallery} />
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-24">
         <p className="eyebrow text-accent-light">Forfaits</p>

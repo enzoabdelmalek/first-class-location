@@ -21,6 +21,7 @@ export default function VehiclesPage() {
             Nos <span className="text-accent-light italic">véhicules.</span>
           </>
         }
+        image="/vehicules/audi-rs3-sportback/jante.jpg"
         intro={`${fleet.length} modèles d’exception, livrés à l’adresse de votre choix dans ${site.city}. À partir de ${euros(fleetFromPrice)}.`}
       />
       <div className="bg-ink">

@@ -16,6 +16,7 @@ export function VehicleVisual({
   animated = false,
   priority = false,
   ratio = "aspect-[3/1]",
+  sizes = "(min-width: 1024px) 33vw, 100vw",
   className,
 }: {
   vehicle: Vehicle;
@@ -24,19 +25,25 @@ export function VehicleVisual({
   priority?: boolean;
   /** Proportions du cadre : bandeau large par défaut, plus haut dans les cartes. */
   ratio?: string;
+  /** Largeur affichée, pour que la photo servie ne soit pas plus lourde que nécessaire. */
+  sizes?: string;
   className?: string;
 }) {
   return (
     <div className={cn("relative overflow-hidden", ratio, className)}>
       {vehicle.image ? (
-        <Image
-          src={vehicle.image}
-          alt={`${vehicle.brand} ${vehicle.model} ${vehicle.finish}`}
-          fill
-          priority={priority}
-          sizes="(min-width: 1024px) 50vw, 100vw"
-          className="object-cover"
-        />
+        <>
+          <Image
+            src={vehicle.image}
+            alt={`${vehicle.brand} ${vehicle.model} ${vehicle.finish}`}
+            fill
+            priority={priority}
+            sizes={sizes}
+            className="object-cover"
+          />
+          {/* Assombrit le haut et le bas de la photo : les libellés posés dessus restent lisibles. */}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ink/60 via-transparent to-ink/40" />
+        </>
       ) : (
         <>
           <div

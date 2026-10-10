@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon, CheckIcon, LockIcon, PinIcon } from "@/components/icons";
 import { QuickBooking } from "@/components/quick-booking";
@@ -21,6 +22,25 @@ const steps = [
     code: "03",
     title: "Prenez la route",
     text: "Nous livrons le véhicule à l’adresse choisie : état des lieux, prise en main, et la route est à vous.",
+  },
+];
+
+/** Bandeau d'ambiance : photos de détail, sans désigner un modèle. */
+const experience = [
+  {
+    src: "/vehicules/audi-rs3-sportback/volant.jpg",
+    title: "Prête à partir",
+    text: "Contrôlée, nettoyée et le plein fait avant chaque location.",
+  },
+  {
+    src: "/vehicules/audi-rs3-sportback/jante.jpg",
+    title: "Livrée chez vous",
+    text: "À l’adresse de votre choix dans Paris, à l’heure convenue.",
+  },
+  {
+    src: "/vehicules/audi-rs3-sportback/sieges-baquets.jpg",
+    title: "Prise en main",
+    text: "État des lieux ensemble et présentation du véhicule avant de prendre la route.",
   },
 ];
 
@@ -66,6 +86,15 @@ export default function HomePage() {
     <>
       {/* ---------------------------- Hero ---------------------------- */}
       <section className="relative overflow-hidden bg-ink text-paper">
+        <Image
+          src="/vehicules/audi-rs3-sportback/arriere-detail.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[50%_62%] opacity-45"
+        />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ink/80 via-ink/55 to-ink" />
         <div className="relative mx-auto max-w-7xl px-4 pt-14 sm:px-8 lg:pt-20">
           <div className="pb-16 text-center lg:pb-24">
             <p className="eyebrow rise inline-flex items-center gap-2 text-accent-light">
@@ -105,6 +134,24 @@ export default function HomePage() {
           </div>
           <div className="mt-12">
             <FleetGrid vehicles={fleet} />
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------- L'expérience ---------------------------- */}
+      <section className="bg-ink text-paper">
+        <div className="mx-auto max-w-7xl px-4 pb-20 sm:px-8 lg:pb-28">
+          <div className="grid gap-4 border-t border-ink-line pt-20 sm:grid-cols-3 lg:pt-28">
+            {experience.map((e) => (
+              <figure key={e.title} className="group relative aspect-[4/5] overflow-hidden">
+                <Image src={e.src} alt="" fill sizes="(min-width: 640px) 33vw, 100vw" className="object-cover transition duration-700 group-hover:scale-[1.04]" />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
+                <figcaption className="absolute inset-x-0 bottom-0 p-6">
+                  <p className="font-display text-xl">{e.title}</p>
+                  <p className="mt-2 text-sm/relaxed text-muted-on-ink">{e.text}</p>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -178,41 +225,47 @@ export default function HomePage() {
             </div>
           </div>
 
-          <aside id="agence" className="self-start bg-ink p-7 text-paper sm:p-9">
-            <p className="eyebrow text-accent-light">Remise des clés</p>
-            <p className="mt-4 font-display text-xl/snug">
-              Partout dans {site.city},
-              <br />
-              <span className="text-accent-light italic">à l’adresse de votre choix.</span>
-            </p>
-            <dl className="mt-7 space-y-2 text-sm">
-              {site.hours.map((h) => (
-                <div key={h.days} className="flex justify-between gap-4 border-b border-ink-line pb-2">
-                  <dt className="text-muted-on-ink">{h.days}</dt>
-                  <dd>{h.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-8 grid gap-2">
-              <Link
-                href="/reserver"
-                className="inline-flex items-center justify-center gap-2 rounded-sm bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
-              >
-                Réserver · dès {euros(fleetFromPrice)}
-                <ArrowIcon className="h-4 w-4" />
-              </Link>
-              <a href={`tel:${site.contact.phone}`} className="inline-flex items-center justify-center rounded-sm border border-white/25 px-5 py-3 font-semibold hover:border-white">
-                {site.contact.phoneDisplay}
-              </a>
+          <aside id="agence" className="self-start overflow-hidden bg-ink text-paper">
+            <div className="relative aspect-[16/10]">
+              <Image src="/vehicules/audi-rs3-sportback/portiere.jpg" alt="" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
+              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink to-transparent" />
             </div>
-            <ul className="mt-7 space-y-2 text-xs text-muted-on-ink">
-              <li className="flex items-center gap-2">
-                <LockIcon className="h-4 w-4 text-accent-light" /> Paiement et signature en ligne sécurisés
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckIcon className="h-4 w-4 text-accent-light" /> Livraison incluse dans Paris
-              </li>
-            </ul>
+            <div className="p-7 pt-2 sm:p-9 sm:pt-2">
+              <p className="eyebrow text-accent-light">Remise des clés</p>
+              <p className="mt-4 font-display text-xl/snug">
+                Partout dans {site.city},
+                <br />
+                <span className="text-accent-light italic">à l’adresse de votre choix.</span>
+              </p>
+              <dl className="mt-7 space-y-2 text-sm">
+                {site.hours.map((h) => (
+                  <div key={h.days} className="flex justify-between gap-4 border-b border-ink-line pb-2">
+                    <dt className="text-muted-on-ink">{h.days}</dt>
+                    <dd>{h.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-8 grid gap-2">
+                <Link
+                  href="/reserver"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
+                >
+                  Réserver · dès {euros(fleetFromPrice)}
+                  <ArrowIcon className="h-4 w-4" />
+                </Link>
+                <a href={`tel:${site.contact.phone}`} className="inline-flex items-center justify-center rounded-sm border border-white/25 px-5 py-3 font-semibold hover:border-white">
+                  {site.contact.phoneDisplay}
+                </a>
+              </div>
+              <ul className="mt-7 space-y-2 text-xs text-muted-on-ink">
+                <li className="flex items-center gap-2">
+                  <LockIcon className="h-4 w-4 text-accent-light" /> Paiement et signature en ligne sécurisés
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckIcon className="h-4 w-4 text-accent-light" /> Livraison incluse dans Paris
+                </li>
+              </ul>
+            </div>
           </aside>
         </div>
       </section>

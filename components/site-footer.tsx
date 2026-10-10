@@ -39,6 +39,13 @@ export function SiteFooter() {
                 {site.contact.email}
               </a>
             </p>
+            <p className="flex flex-wrap gap-x-4 gap-y-1 pt-3">
+              {site.socials.map((s) => (
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer noopener" className="text-paper hover:text-accent-light">
+                  {s.label}
+                </a>
+              ))}
+            </p>
           </address>
         </div>
 
