@@ -294,7 +294,14 @@ export function Booking({ initial }: { initial: BookingInitial }) {
       <Stepper step={step} onJump={(i) => i < step && go(i)} />
 
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1fr_380px] lg:gap-12">
+        {/* Boutons inactifs tant que la page n'est pas prête : avant le chargement du
+            JavaScript, un envoi natif rechargerait la page et viderait le formulaire. */}
         <form id="reservation" onSubmit={onSubmit} noValidate className="min-w-0">
+          <noscript>
+            <p className="mb-8 border-l-2 border-accent bg-paper-alt px-5 py-4 text-sm">
+              La réservation en ligne nécessite JavaScript. Activez-le, ou appelez-nous au {site.contact.phoneDisplay}.
+            </p>
+          </noscript>
           {current === "Location" && (
             <Panel
               title="Votre location"
@@ -774,7 +781,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             )}
             <button
               type="submit"
-              disabled={status === "paying"}
+              disabled={!mounted || status === "paying"}
               className={cn(
                 "hidden items-center justify-center gap-2 rounded-sm px-7 py-3.5 font-semibold text-white transition disabled:opacity-60 lg:inline-flex",
                 step === STEPS.length - 1 ? "bg-accent hover:bg-accent-hover" : "bg-ink hover:bg-accent",
@@ -805,7 +812,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
         <button
           type="submit"
           form="reservation"
-          disabled={status === "paying"}
+          disabled={!mounted || status === "paying"}
           className="inline-flex shrink-0 items-center gap-2 rounded-sm bg-accent px-5 py-3 font-semibold text-white transition hover:bg-accent-hover disabled:opacity-60"
         >
           {cta}
