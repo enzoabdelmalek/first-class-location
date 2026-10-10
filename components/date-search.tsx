@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DateInput } from "@/components/date-input";
 import { ArrowIcon } from "@/components/icons";
 import { offers, parseStay } from "@/lib/availability";
 import { isoDay } from "@/lib/dates";
@@ -50,29 +51,29 @@ export function DateSearch({
     >
       <label className="block bg-ink-soft px-4 py-3">
         <span className="eyebrow block text-muted-on-ink">Départ</span>
-        <input
-          type="date"
+        <DateInput
           name="du"
           required
           min={tomorrow}
           value={from}
-          onChange={(e) => {
-            setFrom(e.target.value);
-            if (to && to < e.target.value) setTo(e.target.value);
+          onChange={(v) => {
+            setFrom(v);
+            if (to && to < v) setTo(v);
           }}
           className="mt-1 w-full bg-transparent text-paper [color-scheme:dark] focus:outline-none"
+          placeholderClassName="mt-1 text-muted-on-ink"
         />
       </label>
       <label className="block bg-ink-soft px-4 py-3">
         <span className="eyebrow block text-muted-on-ink">Retour</span>
-        <input
-          type="date"
+        <DateInput
           name="au"
           required
           min={from || tomorrow}
           value={to}
-          onChange={(e) => setTo(e.target.value)}
+          onChange={setTo}
           className="mt-1 w-full bg-transparent text-paper [color-scheme:dark] focus:outline-none"
+          placeholderClassName="mt-1 text-muted-on-ink"
         />
       </label>
       <button

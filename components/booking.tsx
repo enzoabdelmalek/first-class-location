@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CarSilhouette } from "@/components/car-silhouette";
 import { isAvailable } from "@/lib/availability";
+import { DateInput } from "@/components/date-input";
 import { DocumentUpload, type Upload } from "@/components/document-upload";
 import { Logo } from "@/components/logo";
 import { ArrowIcon, CheckIcon, LockIcon, ShieldIcon } from "@/components/icons";
@@ -309,14 +310,12 @@ export function Booking({ initial }: { initial: BookingInitial }) {
             >
               <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
                 <Field label="Début de la location" error={errors.from}>
-                  <input
-                    type="date"
+                  <DateInput
                     className="field"
+                    placeholderClassName="pl-[0.95rem]"
                     min={mounted ? isoDay(1) : undefined}
                     value={trip.from}
-                    onChange={(e) =>
-                      setTrip((t) => ({ ...t, from: e.target.value, to: t.to && t.to < e.target.value ? e.target.value : t.to }))
-                    }
+                    onChange={(v) => setTrip((t) => ({ ...t, from: v, to: t.to && t.to < v ? v : t.to }))}
                   />
                 </Field>
                 <Field label="Heure">
@@ -327,12 +326,12 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                   </select>
                 </Field>
                 <Field label="Fin de la location" error={errors.to}>
-                  <input
-                    type="date"
+                  <DateInput
                     className="field"
+                    placeholderClassName="pl-[0.95rem]"
                     min={trip.from || (mounted ? isoDay(1) : undefined)}
                     value={trip.to}
-                    onChange={(e) => setTrip((t) => ({ ...t, to: e.target.value }))}
+                    onChange={(v) => setTrip((t) => ({ ...t, to: v }))}
                   />
                 </Field>
                 <Field label="Heure">
@@ -479,7 +478,15 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                 {driverField("lastName", "Nom", { autoComplete: "family-name" })}
                 {driverField("email", "E-mail", { type: "email", autoComplete: "email" })}
                 {driverField("phone", "Téléphone", { type: "tel", autoComplete: "tel" })}
-                {driverField("birthDate", "Date de naissance", { type: "date", autoComplete: "bday" })}
+                <Field label="Date de naissance" error={errors.birthDate}>
+                  <DateInput
+                    className="field"
+                    placeholderClassName="pl-[0.95rem]"
+                    autoComplete="bday"
+                    value={driver.birthDate}
+                    onChange={(v) => setDriver({ ...driver, birthDate: v })}
+                  />
+                </Field>
                 {driverField("birthPlace", "Lieu de naissance", { placeholder: "Ville, pays" })}
                 {driverField("street", "Adresse", { autoComplete: "street-address" }, "sm:col-span-2")}
                 {driverField("postalCode", "Code postal", { autoComplete: "postal-code", inputMode: "numeric" })}
@@ -530,7 +537,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                     />
                   </Field>
                   <Field label="Valable jusqu’au" error={errors.idExpiry}>
-                    <input type="date" className="field" value={papers.idExpiry} onChange={(e) => setPaper("idExpiry", e.target.value)} />
+                    <DateInput className="field" placeholderClassName="pl-[0.95rem]" value={papers.idExpiry} onChange={(v) => setPaper("idExpiry", v)} />
                   </Field>
                   <DocumentUpload
                     label={papers.idType === "cni" ? "Recto" : "Page avec la photo"}
@@ -558,7 +565,7 @@ export function Booking({ initial }: { initial: BookingInitial }) {
                     />
                   </Field>
                   <Field label="Date d’obtention du permis B" error={errors.licenseDate}>
-                    <input type="date" className="field" value={papers.licenseDate} onChange={(e) => setPaper("licenseDate", e.target.value)} />
+                    <DateInput className="field" placeholderClassName="pl-[0.95rem]" value={papers.licenseDate} onChange={(v) => setPaper("licenseDate", v)} />
                   </Field>
                   <DocumentUpload
                     label="Recto"

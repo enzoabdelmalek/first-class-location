@@ -91,6 +91,7 @@ export function SiteHeader() {
             >
               <span aria-hidden className="relative block h-3 w-5">
                 <span className="absolute top-0 left-0 h-px w-5 bg-paper transition duration-300 group-open:top-1.5 group-open:rotate-45" />
+                <span className="absolute top-1.5 left-0 h-px w-5 bg-paper transition duration-300 group-open:opacity-0" />
                 <span className="absolute top-3 left-0 h-px w-5 bg-paper transition duration-300 group-open:top-1.5 group-open:-rotate-45" />
               </span>
             </summary>
