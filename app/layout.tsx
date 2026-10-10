@@ -28,7 +28,7 @@ const mono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} - Location de voitures de prestige à ${site.city}`,
+    default: `${site.name} - Location de voitures de luxe à ${site.city}`,
     template: `%s - ${site.name}`,
   },
   description: site.description,
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     siteName: site.name,
-    title: `${site.name} - Location de voitures de prestige à ${site.city}`,
+    title: `${site.name} - Location de voitures de luxe à ${site.city}`,
     description: site.description,
     url: site.url,
   },

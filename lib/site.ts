@@ -8,12 +8,17 @@
 
 export const site = {
   name: "First Class",
-  tagline: "Location de prestige",
-  city: "Mantes-la-Jolie",
-  area: "Yvelines",
+  tagline: "Location de voitures de luxe",
+  /**
+   * Positionnement : agence PARISIENNE. Le client ne veut pas être associé
+   * aux Yvelines (10/10/2026) : la ville du siège n'apparaît que là où la
+   * loi l'impose (mentions légales, CGV, contrat, politique de confidentialité).
+   */
+  city: "Paris",
+  area: "Île-de-France",
 
   description:
-    "First Class, location de voitures de prestige à Mantes-la-Jolie : Audi RS3 Sportback gris mat, forfaits semaine et week-end. Réservation et paiement en ligne.",
+    "First Class, location de voitures de luxe à Paris : Audi RS3 Sportback gris mat livrée à l’adresse de votre choix, forfaits semaine et week-end. Réservation, signature et paiement en ligne.",
 
   url: "https://www.firstclass-location.fr", // TODO domaine définitif
 
@@ -23,6 +28,7 @@ export const site = {
     email: "contact@firstclass-location.fr", // TODO
   },
 
+  /** Siège déclaré au RNE : pages légales et contrat UNIQUEMENT, jamais en vitrine. */
   address: {
     street: "2 rue Christophe Colomb",
     postalCode: "78200",
@@ -30,35 +36,38 @@ export const site = {
     country: "FR",
   },
 
-  mapsUrl:
-    "https://www.google.com/maps/search/?api=1&query=2+rue+Christophe+Colomb%2C+78200+Mantes-la-Jolie",
-
   // TODO horaires réels
   hours: [
-    { days: "Lundi - Vendredi", value: "9h - 19h" },
-    { days: "Samedi", value: "9h - 17h" },
+    { days: "Lundi - Samedi", value: "8h - 20h" },
     { days: "Dimanche", value: "Sur rendez-vous" },
   ],
 
-  /** Lieux de prise en charge proposés à la réservation. */
+  /**
+   * Lieux de remise des clés proposés à la réservation : pas d'agence
+   * ouverte au public, le véhicule est livré. TODO tarifs à confirmer.
+   */
   locations: [
-    { id: "agence", label: "Agence - Mantes-la-Jolie", fee: 0 },
-    { id: "gare", label: "Gare de Mantes-la-Jolie", fee: 15 },
-    { id: "domicile", label: "Livraison à domicile (Yvelines)", fee: 35 },
+    { id: "paris", label: "Paris, à l’adresse de votre choix", fee: 0 },
+    { id: "gare", label: "Gare ou aéroport parisien", fee: 50 },
+    { id: "idf", label: "Île-de-France, à domicile", fee: 50 },
   ],
 
   booking: {
     /**
-     * Mode de caution :
-     * - "onsite"   : empreinte bancaire prise au moment du paiement, sur le site ;
-     * - "external" : caution déposée chez un prestataire (lien envoyé par e-mail).
-     * À trancher avec le client - la maquette affiche le mode choisi ici.
+     * Caution par empreinte bancaire, prise sur le site et levée À LA MAIN
+     * par l'agence depuis le dashboard, après l'état des lieux de retour.
+     *
+     * Une autorisation bancaire expire au bout de 7 jours (30 au mieux avec
+     * l'autorisation étendue de Stripe pour les loueurs) : la carte est donc
+     * enregistrée à la réservation et l'empreinte réalisée juste avant la
+     * remise des clés, pas au moment du paiement.
      */
-    depositMode: "onsite" as "onsite" | "external",
-    depositPartner: "Swikly", // utilisé seulement en mode "external"
     kmPerDay: 150, // TODO kilométrage inclus à confirmer
     extraKm: 1.5, // TODO à confirmer // €/km au-delà du forfait
-    releaseDays: 7, // délai de libération de l'empreinte après restitution
+    /** Copies des pièces : supprimées N mois après la restitution, hors litige. */
+    documentsRetentionMonths: 3, // TODO à valider avec le client
+    /** Le véhicule est-il équipé d'un traceur GPS ? Si oui, il faut le dire au locataire. */
+    gpsTracker: false, // TODO à confirmer
   },
 
   legal: {
@@ -81,6 +90,6 @@ export const site = {
       address: "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
       url: "https://vercel.com",
     },
-    updatedOn: "2026-10-04",
+    updatedOn: "2026-10-10",
   },
 } as const;

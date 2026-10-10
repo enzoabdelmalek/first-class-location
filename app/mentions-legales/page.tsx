@@ -23,7 +23,7 @@ export default function MentionsLegalesPage() {
         <LegalRow label="Immatriculation">{legal.registry}</LegalRow>
         <LegalRow label="Code APE">{legal.ape}</LegalRow>
         <LegalRow label="TVA intracommunautaire">{legal.vatNumber}</LegalRow>
-        <LegalRow label="Adresse">
+        <LegalRow label="Siège">
           {site.address.street}, {site.address.postalCode} {site.address.city}, France
         </LegalRow>
         <LegalRow label="Téléphone">
@@ -58,8 +58,7 @@ export default function MentionsLegalesPage() {
         <p>
           Conformément aux articles L.611-1 et suivants du Code de la consommation, en cas de litige non résolu
           avec nos services, vous pouvez recourir gratuitement au médiateur de la consommation suivant :{" "}
-          {legal.mediator.name}. Vous pouvez également utiliser la plateforme européenne de règlement en ligne des
-          litiges.
+          {legal.mediator.name}.
         </p>
       </LegalSection>
 

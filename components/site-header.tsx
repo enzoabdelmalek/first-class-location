@@ -42,7 +42,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/reserver"
-            className="hidden rounded-sm bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-ink sm:inline-flex"
+            className="inline-flex rounded-sm bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-ink sm:px-5"
           >
             Réserver
           </Link>

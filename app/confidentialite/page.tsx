@@ -16,14 +16,19 @@ const purposes = [
     retention: "Durée de la relation, puis 5 ans (prescription civile)",
   },
   {
-    purpose: "Vérification de l’âge et du permis de conduire",
-    basis: "Exécution du contrat · intérêt légitime (sécurité)",
-    retention: "1 an après la fin de la location",
+    purpose: "Vérification de l’identité, de l’âge et du permis de conduire",
+    basis: "Exécution du contrat · intérêt légitime (prévention de la fraude et du vol)",
+    retention: `Copies des pièces : ${site.booking.documentsRetentionMonths} mois après la restitution, sauf litige en cours · numéros des pièces : 1 an`,
   },
   {
-    purpose: "Paiement, caution et prévention de la fraude",
+    purpose: "Signature électronique du contrat et conservation de la preuve",
+    basis: "Exécution du contrat · intérêt légitime (preuve)",
+    retention: "5 ans après la fin de la location (prescription civile)",
+  },
+  {
+    purpose: "Paiement, empreinte de caution et prévention de la fraude",
     basis: "Exécution du contrat · intérêt légitime",
-    retention: "13 mois après le paiement (données de transaction)",
+    retention: "Carte enregistrée chez Stripe jusqu’à la levée de la caution · données de transaction : 13 mois",
   },
   {
     purpose: "Désignation du conducteur en cas d’infraction",
@@ -67,11 +72,22 @@ export default function ConfidentialitePage() {
             <strong>Identité et contact</strong> : nom, prénom, e-mail, téléphone, adresse de livraison le cas échéant.
           </li>
           <li>
-            <strong>Conducteur</strong> : date de naissance, numéro et date d’obtention du permis de conduire. Une copie du
-            permis et d’une pièce d’identité est vérifiée lors de la remise des clés.
+            <strong>Conducteur</strong> : date et lieu de naissance, adresse postale, type, numéro et date de validité de
+            la pièce d’identité, numéro et date d’obtention du permis de conduire.
           </li>
           <li>
-            <strong>Location</strong> : dates, véhicule, options, état des lieux, kilométrage.
+            <strong>Copies des pièces</strong> : photo recto verso de la carte d’identité (ou page photo du passeport) et
+            du permis de conduire. Elles sont stockées chiffrées dans un espace privé, consultables par le seul
+            personnel habilité, et ne servent qu’à vérifier votre identité et votre droit de conduire. Vous pouvez
+            masquer sur les copies les mentions inutiles à cette vérification.
+          </li>
+          <li>
+            <strong>Signature</strong> : image de votre signature, horodatage, adresse IP, code de confirmation et
+            empreinte numérique du contrat signé.
+          </li>
+          <li>
+            <strong>Location</strong> : dates, adresse de livraison, véhicule, options, état des lieux et photographies,
+            kilométrage{site.booking.gpsTracker ? ", position du véhicule en cas de vol ou de non-restitution" : ""}.
           </li>
           <li>
             <strong>Paiement</strong> : vos données de carte sont saisies et traitées directement par notre prestataire de
@@ -111,7 +127,8 @@ export default function ConfidentialitePage() {
         <ul>
           <li>Le personnel de {site.legal.tradeName}, dans la limite de ses fonctions.</li>
           <li>Notre prestataire de paiement (Stripe Payments Europe Ltd.).</li>
-          <li>Notre hébergeur ({site.legal.host.name}).</li>
+          <li>Notre hébergeur ({site.legal.host.name}) et notre hébergeur de base de données et de fichiers (Supabase, serveurs dans l’Union européenne).</li>
+          <li>Notre prestataire d’envoi d’e-mails (contrat, code de signature, confirmations).</li>
           <li>Notre assureur, en cas de sinistre.</li>
           <li>
             Les autorités habilitées, notamment l’Agence nationale de traitement automatisé des infractions (ANTAI)
@@ -131,8 +148,9 @@ export default function ConfidentialitePage() {
 
       <LegalSection title="Sécurité">
         <p>
-          Le site est servi exclusivement en HTTPS. L’accès aux données est limité aux personnes habilitées et protégé
-          par authentification.
+          Le site est servi exclusivement en HTTPS. Les copies de pièces sont chiffrées et ne sont accessibles que par
+          des liens temporaires, réservés au personnel habilité. L’accès aux données est protégé par authentification
+          et journalisé.
         </p>
       </LegalSection>
 

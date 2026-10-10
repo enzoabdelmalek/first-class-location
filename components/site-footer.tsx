@@ -5,7 +5,8 @@ import { site } from "@/lib/site";
 
 const legalLinks = [
   { href: "/mentions-legales", label: "Mentions légales" },
-  { href: "/conditions-generales", label: "Conditions générales de location" },
+  { href: "/cgv", label: "Conditions générales de vente" },
+  { href: "/conditions-de-location", label: "Conditions de location" },
   { href: "/confidentialite", label: "Politique de confidentialité" },
   { href: "/rgpd", label: "Vos droits (RGPD)" },
   { href: "/cookies", label: "Politique cookies" },
@@ -18,16 +19,15 @@ export function SiteFooter() {
         <div className="space-y-5">
           <Logo />
           <p className="max-w-xs text-sm/relaxed text-muted-on-ink">
-            Location de voitures de prestige et sportives à {site.city} et dans les {site.area}.
+            Location de voitures de luxe et sportives à {site.city}, livrées partout en {site.area}.
           </p>
         </div>
 
         <div>
-          <p className="eyebrow text-accent-light">Agence</p>
+          <p className="eyebrow text-accent-light">Contact</p>
           <address className="mt-4 space-y-1 text-sm/relaxed not-italic text-muted-on-ink">
-            <p>{site.address.street}</p>
             <p>
-              {site.address.postalCode} {site.address.city}
+              {site.city} · {site.area}
             </p>
             <p className="pt-3">
               <a href={`tel:${site.contact.phone}`} className="text-paper hover:text-accent-light">

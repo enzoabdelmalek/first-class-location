@@ -23,7 +23,7 @@ export default async function ReservePage({ searchParams }: PageProps<"/reserver
           </h1>
         </div>
       </div>
-      <Booking initial={{ vehicule: pick("vehicule"), lieu: pick("lieu") }} />
+      <Booking initial={{ vehicule: pick("vehicule"), lieu: pick("lieu"), du: pick("du"), au: pick("au") }} />
     </div>
   );
 }

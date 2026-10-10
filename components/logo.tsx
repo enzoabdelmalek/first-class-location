@@ -15,7 +15,7 @@ export function Logo({ className, subtitle = true }: { className?: string; subti
       </span>
       {subtitle ? (
         <span className="mt-1.5 text-[0.55rem] font-medium tracking-[0.34em] uppercase opacity-55 [font-stretch:110%]">
-          Location de prestige
+          Luxe · Paris
         </span>
       ) : null}
     </span>

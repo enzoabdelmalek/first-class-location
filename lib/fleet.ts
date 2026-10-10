@@ -8,9 +8,12 @@
  * Le client choisit librement ses dates ; le prix est déduit des forfaits
  * par `tariff()` (voir sa règle plus bas).
  *
- * ⚠️ À CONFIRMER avec le client : la règle de tarification, l'âge et
- * l'ancienneté de permis minimum ; les options et leurs tarifs sont des
- * propositions de la maquette.
+ * Âge minimum : 21 ans, demandé par le client le 10/10/2026.
+ *
+ * ⚠️ À CONFIRMER avec le client : la règle de tarification, l'ancienneté de
+ * permis, la franchise, l'immatriculation ; les options et leurs tarifs sont
+ * des propositions de la maquette. L'âge et l'ancienneté de permis doivent
+ * aussi être acceptés par l'assureur de la flotte.
  */
 
 export type Body = "citadine" | "compacte" | "suv" | "berline" | "utilitaire";
@@ -34,7 +37,11 @@ export type Vehicle = {
   body: Body;
   headline: { value: string; label: string }[];
   specs: { label: string; value: string }[];
+  /** Immatriculation, reprise sur le contrat. */
+  plate: string;
   deposit: number;
+  /** Franchise restant à la charge du locataire en cas de sinistre ; `null` tant qu'elle n'est pas connue. */
+  excess: number | null;
   minAge: number;
   minLicenseYears: number;
   packages: Package[];
@@ -64,9 +71,11 @@ export const fleet: Vehicle[] = [
       { label: "Teinte", value: "Gris mat, teinte exclusive Audi" },
       { label: "Places", value: "5" },
     ],
+    plate: "À compléter", // TODO immatriculation
     deposit: 6000,
-    minAge: 25, // TODO à confirmer
-    minLicenseYears: 3, // TODO à confirmer
+    excess: null, // TODO montant de la franchise (contrat d'assurance)
+    minAge: 21,
+    minLicenseYears: 3, // TODO à confirmer avec l'assureur
     packages: [
       {
         id: "24h-semaine",

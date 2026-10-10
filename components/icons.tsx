@@ -80,3 +80,23 @@ export const TimerIcon = ({ className }: IconProps) => (
     <path d="M12 13.5l3.5-3M10 2.5h4" />
   </svg>
 );
+
+export const UploadIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+  </svg>
+);
+
+export const DocIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" />
+    <path d="M14 3v5h5M9 13h6M9 17h4" />
+  </svg>
+);
+
+export const ShieldIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M12 3l7 3v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6l7-3z" />
+    <path d="M9 12l2 2 4-4" />
+  </svg>
+);

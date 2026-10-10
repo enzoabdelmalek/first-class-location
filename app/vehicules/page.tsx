@@ -8,7 +8,7 @@ import { euros } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Nos véhicules",
-  description: `Audi RS3 Sportback gris mat à louer à ${site.city} : fiche technique, forfaits semaine et week-end.`,
+  description: `Audi RS3 Sportback gris mat à louer à ${site.city}, livrée à l’adresse de votre choix : fiche technique, forfaits semaine et week-end.`,
 };
 
 /**
@@ -50,7 +50,7 @@ export default function VehiclesPage() {
                 <p className="eyebrow text-accent">Fiche technique</p>
                 <h2 className="mt-3 font-display text-3xl/[1.08] sm:text-4xl/[1.08]">Dans le détail.</h2>
                 <p className="mt-6 max-w-md text-base/relaxed text-muted">
-                  Remise propre, avec le plein, après un contrôle complet. Le véhicule est accessible dès {car.minAge} ans
+                  Livrée propre, avec le plein, après un contrôle complet. Le véhicule est accessible dès {car.minAge} ans
                   avec {car.minLicenseYears} ans de permis.
                 </p>
               </div>
